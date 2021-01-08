@@ -1,0 +1,39 @@
+= Java Util Logging (JUL) integration
+:minisite-index: 300
+:minisite-index-title: GraalVM
+:minisite-index-description: How to use it to have reconfigurable JUL/SLF4j loggers.
+:minisite-index-icon: fighter-jet
+
+== Usage with GraalVM
+
+Yupiik Logging JUL is integrated with GraalVM native image feature.
+To enable it you must set in `native-image` command line the following system property: `-Djava.util.logging.manager=io.yupiik.logging.jul.YupiikLogManager`.
+Other required setup is done in the jar and automatically picked up by `native-image`.
+
+NOTE: yupiik-logging-jul will set itself as JUL LogManager during the build time so ensure it does not compete with another logging framework.
+
+Once done you can run with no logging configuration or override it through the standard `java.util.logging.config.file` system property.
+
+== Arthur Integration
+
+To use this module with link:https://geronimo.apache.org/arthur/[Arthur] you can use this configuration:
+
+[source,xml]
+----
+<plugin> <!-- mvn [package] -Parthur arthur:native-image -e -->
+  <groupId>org.apache.geronimo.arthur</groupId>
+  <artifactId>arthur-maven-plugin</artifactId>
+  <version>1.0.1</version>
+  <configuration>
+    <graalVersion>20.3.0.r11</graalVersion>
+    <main>com.app.YourMain</main>
+    <graalExtensions> <!-- if you also want slf4j support through JUL -->
+      <graalExtension>slf4j</graalExtension>
+    </graalExtensions>
+    <customOptions> <!-- this is what enables Yupiik JUL support -->
+      <customOption>-Djava.util.logging.manager=io.yupiik.logging.jul.YupiikLogManager</customOption>
+    </customOptions>
+  </configuration>
+</plugin>
+----
+

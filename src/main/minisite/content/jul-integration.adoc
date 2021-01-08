@@ -1,4 +1,19 @@
-= Yupiik Logging JUL integration
+= Java Util Logging (JUL) integration
+:minisite-index: 200
+:minisite-index-title: JUL Integration
+:minisite-index-description: Java Util Logging integration module and features.
+:minisite-index-icon: fab fa-java
+
+Java Util Logging integration is provided as part of the artifact:
+
+[source,xml]
+----
+<dependency>
+  <groupId>io.yupiik.logging</groupId>
+  <artifactId>yupiik-logging-jul</artifactId>
+  <version>${yupiik-logging.version}</version>
+</dependency>
+----
 
 == Use globally
 
@@ -93,15 +108,11 @@ It can be done with this list for example:
 </dependency>
 ----
 
-== Usage with GraalVM
+== Sample Configuration Files
 
-Yupiik Logging JUL is integrated with GraalVM native image feature.
-To enable it you must set in `native-image` command line the following system property: `-Djava.util.logging.manager=io.yupiik.logging.jul.YupiikLogManager`.
-Other required setup is done in the jar and automatically picked up by `native-image`.
+As with native JUL `LogManager`, you can configure the runtime logging with the following system property: `-Djava.util.logging.config.file=<path to config file>`.
 
-NOTE: yupiik-loggin-jul will set itself as JUL LogManager during the build time so ensure it does not compete with another logging framework.
-
-Once done you can run with no logging configuration or override it through the standard `java.util.logging.config.file` system property.
+NOTE: don't forget `-Djava.util.logging.manager=io.yupiik.logging.jul.YupiikLogManager` too.
 
 Here is a sample configuration switching to JSON logging:
 
@@ -134,27 +145,4 @@ And finally a configuration using file output instead of standard one:
 ----
 .handlers = file
 file.formatter = inline
-----
-
-== Arthur Integration (GraalVM)
-
-To use this module with link:https://geronimo.apache.org/arthur/[Arthur] you can use this configuration:
-
-[source,xml]
-----
-<plugin> <!-- mvn [package] -Parthur arthur:native-image -e -->
-  <groupId>org.apache.geronimo.arthur</groupId>
-  <artifactId>arthur-maven-plugin</artifactId>
-  <version>1.0.1</version>
-  <configuration>
-    <graalVersion>20.3.0.r11</graalVersion>
-    <main>com.app.YourMain</main>
-    <graalExtensions> <!-- if you also want slf4j support through JUL -->
-      <graalExtension>slf4j</graalExtension>
-    </graalExtensions>
-    <customOptions> <!-- this is what enables Yupiik JUL support -->
-      <customOption>-Djava.util.logging.manager=io.yupiik.logging.jul.YupiikLogManager</customOption>
-    </customOptions>
-  </configuration>
-</plugin>
 ----

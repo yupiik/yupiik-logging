@@ -1,0 +1,12 @@
+= Yupiik Logging Overview
+:minisite-index: 100
+:minisite-index-title: Overview
+:minisite-index-description: What is Yupiik logging library about.
+:minisite-index-icon: highlighter
+
+This project provides some logging utilities.
+
+It mainly provides a Java Util Logging (JUL) LogManager which is graal friendly - you can reconfigure your JUL loggers at runtime - plus some utilities like mor advanced formatters or handlers.
+
+For more information, read xref:jul-integration.adoc#_java_util_logging_jul_integration[JUL Integration] documentation.
+

@@ -12,6 +12,10 @@
   <description>Yupiik Logging support</description>
   <url>https://www.yupiik.com/</url>
 
+  <properties>
+    <minisite.github-pages.skip>true</minisite.github-pages.skip>
+  </properties>
+
   <modules>
     <module>yupiik-logging-jul</module>
     <module>integration-test</module>
@@ -138,6 +142,40 @@
         <configuration>
           <scope>compile,runtime</scope>
         </configuration>
+      </plugin>
+      <plugin>
+        <!--
+        render doc locally in a build:
+        $ mvn yupiik-tools:minisite@doc -N
+
+        work on the doc:
+        $ mvn yupiik-tools:serve-minisite@doc -N
+
+        deploy on github pages (clean is important to ensure we don't start from a dirty gh-pages copy):
+        $ mvn clean yupiik-tools:minisite@doc -N -Dminisite.github-pages.skip=false
+        -->
+        <groupId>io.yupiik.maven</groupId>
+        <artifactId>yupiik-tools-maven-plugin</artifactId>
+        <version>1.0.2-SNAPSHOT</version>
+        <executions>
+          <execution>
+            <id>doc</id>
+            <phase>none</phase>
+            <goals>
+              <goal>minisite</goal>
+            </goals>
+            <configuration>
+              <logoText>Logging</logoText>
+              <copyright>Yupiik &amp;copy; / Logging</copyright>
+              <indexSubTitle>The Yupiik logging helper library.</indexSubTitle>
+              <siteBase>https://yupiik.github.io/yupiik-logging</siteBase>
+              <target>${project.build.directory}/${project.artifactId}</target>
+              <git>
+                <ignore>${minisite.github-pages.skip}</ignore>
+              </git>
+            </configuration>
+          </execution>
+        </executions>
       </plugin>
     </plugins>
   </build>

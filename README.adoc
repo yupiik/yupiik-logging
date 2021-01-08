@@ -1,7 +1,3 @@
 = Yupiik Logging
 
-This repository provides some logging utilities for logging.
-
-For now it mainly provides a Java Util Logging (JUL) LogManager which is graal friendly - you can reconfigure your JUL loggers at runtime - plus some utilities like mor advanced formatters or handlers.
-
-For more information, read xref:yupiik-logging-jul/README.adoc#_yupiik_logging_jul_integration[JUL Integration] documentation.
+See link:https://yupiik.github.io/yupiik-logging/.
