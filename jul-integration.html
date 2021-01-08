@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Java Util Logging (JUL) integration</title>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="The Yupiik logging helper library.">
+    <meta name="author" content="Yupiik">
+    <link rel="shortcut icon" href="//www.yupiik.com/img/favicon.png">
+
+    <link href="//fonts.googleapis.com/css?family=Open+Sans:300,300i,400,400i,700,700i|Montserrat:300,400,500,700" rel="stylesheet">
+    <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css" integrity="sha512-+4zCK9k+qNFUR5X+cKL9EIR+ZOhtIloNl9GIKS57V1MyNsYpYcUrUeQc9vNfzsWfV28IaLL3i96P9sdNyeRssA==" crossorigin="anonymous" />
+    <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/asciidoctor.js/1.5.5-5/css/asciidoctor.min.css" integrity="sha512-kI7tn5cuEg16kMeXnYmg8rEJPxbxzEM7Gsr191iQdLDevFBLXPCSU9aZWSVuP61tMZWU3nBAR1cJ7SmXnOGLZw==" crossorigin="anonymous" />
+    <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.5.3/css/bootstrap.min.css" integrity="sha512-oc9+XSs1H243/FRN9Rw62Fn8EtxjEYWHXRvjS43YtueEewbS6ObfXcJNyohjHqVKFPoXXUxwc+q1K7Dee6vv9g==" crossorigin="anonymous" />
+    <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/10.4.1/styles/vs2015.min.css" integrity="sha512-w8aclkBlN3Ha08SMwFKXFJqhSUx2qlvTBFLLelF8sm4xQnlg64qmGB/A6pBIKy0W8Bo51yDMDtQiPLNRq1WMcQ==" crossorigin="anonymous" />
+    <link id="theme-style" rel="stylesheet" href="https://yupiik.github.io/yupiik-logging//css/theme.css?v=1.0-SNAPSHOT">
+    
+</head>
+
+<body>
+    <header class="header fixed-top">
+        <div class="branding docs-branding">
+            <div class="container-fluid position-relative py-2">
+                <div class="docs-logo-wrapper">
+	                <div class="site-logo"><a class="navbar-brand" href="index.html">
+	                <img class="logo-icon mr-2" src="https://www.yupiik.com/img/logo.png" alt="logo">
+	                <span class="logo-text">Logging <span class="text-alt">Docs</span></span></a></div>
+                </div>
+	            <div class="docs-top-utilities d-flex justify-content-end align-items-center">
+					<li class="list-inline-item"><a id="search-button" href="#" data-toggle="modal" data-target="#searchModal"><i data-toggle="tooltip" data-placement="top" title="Search" class="fas fa-search"></i></a></li>
+
+					<ul class="social-list list-inline mx-md-3 mx-lg-5 mb-0 d-none d-lg-flex">
+						<li class="list-inline-item"><a href="https://www.linkedin.com/company/yupiik/"><i class="fab fa-linkedin fa-fw"></i></a></li>
+		            </ul>
+	            </div>
+            </div>
+        </div>
+    </header>
+	<div class="page">
+        <div class="page-navigation-left">
+            <h3>Menu</h3>
+            <ul>
+                <li><a href="https://yupiik.github.io/yupiik-logging//overview.html"><i class="fas fa-highlighter"></i> Overview</a></li>
+                <li><a href="https://yupiik.github.io/yupiik-logging//jul-integration.html"><i class="fab fa-java"></i> JUL Integration</a></li>
+                <li><a href="https://yupiik.github.io/yupiik-logging//graalvm-integration.html"><i class="fas fa-fighter-jet"></i> GraalVM</a></li>
+            </ul>
+        </div>
+
+        <div class="container page-content">
+            <div class="page-header">
+                <h1>Java Util Logging (JUL) integration</h1>
+            </div>
+            <div class="page-content-body">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>Java Util Logging integration is provided as part of the artifact:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code data-lang="xml" class="language-xml hljs">&lt;dependency&gt;
+  &lt;groupId&gt;io.yupiik.logging&lt;/groupId&gt;
+  &lt;artifactId&gt;yupiik-logging-jul&lt;/artifactId&gt;
+  &lt;version&gt;${yupiik-logging.version}&lt;/version&gt;
+&lt;/dependency&gt;</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_use_globally">Use globally</h2>
+<div class="sectionbody">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-none hljs">java .... -Djava.util.logging.manager=io.yupiik.logging.jul.YupiikLogManager ...</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_configuration">Configuration</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Configuration is close to default JUL one with small differences:</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>handlers don&#8217;t need to configure themselves in their constructor or so for common properties (formatter, level, &#8230;&#8203;), the framework does it automatically</p>
+</li>
+<li>
+<p><code>InlineFormatter</code> and <code>JsonFormatter</code> support aliases (reflection free instantiation) with <code>inline</code> and <code>json</code> you can use in the configuration</p>
+</li>
+</ol>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_standard_handler">Standard handler</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><code>io.yupiik.logging.jul.handler.StandardHandler</code> enables to log on stdout and stderr.
+For all level from finest/debug to info it will go on stdout and others (warnings, errors/severes) will go on stderr.</p>
+</div>
+<div class="paragraph">
+<p>It can be configured with the <code>std</code> or <code>standard</code> alias too.</p>
+</div>
+<div class="paragraph">
+<p>There is also its companion <code>stdout</code> or <code>io.yupiik.logging.jul.handler.StdoutHandler</code> which only outputs on stdout.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_file_handler">File Handler</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>A <code>io.yupiik.logging.jul.handler.LocalFileHandler</code> is also provided to be able to log in a file and rotate the log file.
+Indeed you can use JVM <code>FileHandler</code> but this one is a bit more powerful in practise if you don&#8217;t run in a container and can&#8217;t use a docker logging driver or equivalent.</p>
+</div>
+<div class="paragraph">
+<p>Here is its configuration - all are prefixed with <code>io.yupiik.logging.jul.handler.LocalFileHandler.</code> and the standard configuration (encoding, level, &#8230;&#8203;) is still supported even if not listed.</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 16.6666%;">
+<col style="width: 16.6666%;">
+<col style="width: 66.6668%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Name</th>
+<th class="tableblock halign-left valign-top">Default Value</th>
+<th class="tableblock halign-left valign-top">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><div class="content"><div class="paragraph">
+<p>filenamePattern</p>
+</div></div></td>
+<td class="tableblock halign-left valign-top"><div class="content"><div class="paragraph">
+<p>${application.base}/logs/logs.%s.%03d.log</p>
+</div></div></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">where log files are created, it uses String.format() and gives you the date and file number - in this order.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><div class="content"><div class="paragraph">
+<p>limit</p>
+</div></div></td>
+<td class="tableblock halign-left valign-top"><div class="content"><div class="paragraph">
+<p>10 Megabytes</p>
+</div></div></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">limit size indicating the file should be rotated - in long format</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><div class="content"><div class="paragraph">
+<p>dateCheckInterval</p>
+</div></div></td>
+<td class="tableblock halign-left valign-top"><div class="content"><div class="paragraph">
+<p>5 seconds</p>
+</div></div></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">how often the date should be computed to rotate the file (don&#8217;t do it each time for performances reason, means you can get few records of next day in a file name with current day). In java Duration format (ex: <code>PT5S</code>).</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><div class="content"><div class="paragraph">
+<p>bufferSize</p>
+</div></div></td>
+<td class="tableblock halign-left valign-top"><div class="content"><div class="paragraph">
+<p>-1</p>
+</div></div></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">if positive the in memory buffer used to store data before flushing them to the disk (in bytes)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><div class="content"><div class="paragraph">
+<p>archiveDirectory</p>
+</div></div></td>
+<td class="tableblock halign-left valign-top"><div class="content"><div class="paragraph">
+<p>${application.base}/logs/archives/</p>
+</div></div></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">where compressed logs are put.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><div class="content"><div class="paragraph">
+<p>archiveFormat</p>
+</div></div></td>
+<td class="tableblock halign-left valign-top"><div class="content"><div class="paragraph">
+<p>gzip</p>
+</div></div></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">zip or gzip.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><div class="content"><div class="paragraph">
+<p>archiveOlderThan</p>
+</div></div></td>
+<td class="tableblock halign-left valign-top"><div class="content"><div class="paragraph">
+<p>-1</p>
+</div></div></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">how many days files are kept before being compressed</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><div class="content"><div class="paragraph">
+<p>purgeOlderThan</p>
+</div></div></td>
+<td class="tableblock halign-left valign-top"><div class="content"><div class="paragraph">
+<p>-1</p>
+</div></div></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">how many days files are kept before being deleted, note: it applies on archives and not log files so 2 days of archiving and 3 days of purge makes it deleted after 5 days.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><div class="content"><div class="paragraph">
+<p>compressionLevel</p>
+</div></div></td>
+<td class="tableblock halign-left valign-top"><div class="content"><div class="paragraph">
+<p>-1</p>
+</div></div></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">In case of zip archiving the zip compression level (-1 for off or 0-9).</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_pattern_formatter">Pattern formatter</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The library also provides a pattern formatter.
+It does not use <code>String.format</code> as <code>SimpleFormatter</code> does and can be configured either with <code>io.yupiik.logging.jul.formatter.PatternFormatter.pattern</code> property or passing the pattern to the formatter alias (reflection free mode): <code>pattern(&lt;pattern to use&gt;)</code>.
+Its syntax uses <code>%</code> to mark elements of the log record. Here is the list:</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 20%;">
+<col style="width: 80%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Name</th>
+<th class="tableblock halign-left valign-top">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><div class="content"><div class="paragraph">
+<p>%%</p>
+</div></div></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Escapes <code>%</code> character.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><div class="content"><div class="paragraph">
+<p>%n</p>
+</div></div></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">End of line.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><div class="content"><div class="paragraph">
+<p>%l or %level</p>
+</div></div></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Log record level.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><div class="content"><div class="paragraph">
+<p>%m or %message</p>
+</div></div></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Log record message.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><div class="content"><div class="paragraph">
+<p>%c or %logger</p>
+</div></div></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Logger name.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><div class="content"><div class="paragraph">
+<p>%C or %class</p>
+</div></div></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Class name if exists or empty.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><div class="content"><div class="paragraph">
+<p>%M or %method</p>
+</div></div></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Method name if exists or empty.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><div class="content"><div class="paragraph">
+<p>%d or %date</p>
+</div></div></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The instant value. Note it can be followed by a date time formatter pattern between braces.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><div class="content"><div class="paragraph">
+<p>%x or %exception</p>
+</div></div></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The exception. It will be preceeded by a new line if existing to ensure it integrates well in log output.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><div class="content"><div class="paragraph">
+<p>%T or %threadId</p>
+</div></div></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Thread ID.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><div class="content"><div class="paragraph">
+<p>%t or %thread or %threadName</p>
+</div></div></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Thread name - only works in synchronous mode.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><div class="content"><div class="paragraph">
+<p>%uuid</p>
+</div></div></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Random UUID.</p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p>Pattern example value: <code>%d [%l][%c][%C][%M] %m%x%n</code>, it will output lines like <code>1970-01-01T00:00:00Z [INFO][the.logger][the.source][the.method] test message\n</code>.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_json_formatter">JSON formatter</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>JSON formatter relies on JSON-B so ensure to add the related dependencies.
+It can be done with this list for example:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code data-lang="xml" class="language-xml hljs">&lt;dependency&gt;
+  &lt;groupId&gt;org.apache.geronimo.specs&lt;/groupId&gt;
+  &lt;artifactId&gt;geronimo-json_1.1_spec&lt;/artifactId&gt;
+  &lt;version&gt;1.5&lt;/version&gt;
+&lt;/dependency&gt;
+&lt;dependency&gt;
+  &lt;groupId&gt;org.apache.geronimo.specs&lt;/groupId&gt;
+  &lt;artifactId&gt;geronimo-jsonb_1.0_spec&lt;/artifactId&gt;
+  &lt;version&gt;1.4&lt;/version&gt;
+&lt;/dependency&gt;
+&lt;dependency&gt;
+  &lt;groupId&gt;org.apache.johnzon&lt;/groupId&gt;
+  &lt;artifactId&gt;johnzon-jsonb&lt;/artifactId&gt;
+  &lt;version&gt;1.2.9&lt;/version&gt;
+&lt;/dependency&gt;</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_sample_configuration_files">Sample Configuration Files</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>As with native JUL <code>LogManager</code>, you can configure the runtime logging with the following system property: <code>-Djava.util.logging.config.file=&lt;path to config file&gt;</code>.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+don&#8217;t forget <code>-Djava.util.logging.manager=io.yupiik.logging.jul.YupiikLogManager</code> too.
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>Here is a sample configuration switching to JSON logging:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code data-lang="properties" class="language-properties hljs">.handlers = io.yupiik.logging.jul.handler.StandardHandler
+io.yupiik.logging.jul.handler.StandardHandler.formatter = json</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The same configuration for a standard inline logging (text style) but tuning the log level:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code data-lang="properties" class="language-properties hljs">.handlers = io.yupiik.logging.jul.handler.StandardHandler
+io.yupiik.logging.jul.handler.StandardHandler.level = FINEST
+com.app.level = FINEST</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Here is a configuration using a pattern:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code data-lang="properties" class="language-properties hljs">.handlers = standard
+standard.formatter = pattern(%d [%l][%c][%C][%M] %m%x%n)</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>And finally a configuration using file output instead of standard one:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code data-lang="properties" class="language-properties hljs">.handlers = file
+file.formatter = inline</code></pre>
+</div>
+</div>
+</div>
+</div>
+            </div>
+        </div>
+
+    <div class="page-navigation-right">
+        <h3>Navigation</h3>
+        <nav class="generated-nav-menu"></nav>
+    </div>
+    </div>
+    <hr />
+    <footer class="footer pb-5">
+	    <div class="footer-bottom text-center">
+		    <ul class="social-list list-unstyled">
+			    <li class="list-inline-item"><a href="https://www.linkedin.com/company/yupiik/"><i class="fab fa-linkedin fa-fw"></i></a></li>
+	        </ul>
+            <small class="copyright">Yupiik &copy; / Logging</small>
+	    </div>
+    </footer>
+
+    <div class="modal fade" id="searchModal" tabindex="-1" role="dialog" aria-labelledby="searchModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="searchModalLabel">Search</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form onsubmit="return false;" class="form-inline">
+          <div class="form-group">
+            <label for="searchInput"><b>Search: </b></label>
+            <input class="form-control" id="searchInput" placeholder="Enter search text and hit enter...">
+          </div>
+        </form>
+        <div class="search-hits"></div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary" data-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+    <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js" ></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.5.3/js/bootstrap.min.js" integrity="sha512-8qmis31OQi6hIRgvkht0s6mCOittjMa9GMqtK9hes5iEQBQE/Ca6yGE5FsW36vyipGoWQswBj/QBm2JR086Rkw==" crossorigin="anonymous"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/10.4.1/highlight.min.js" integrity="sha512-DrpaExP2d7RJqNhXB41Q/zzzQrtb6J0zfnXD5XeVEWE8d9Hj54irCLj6dRS3eNepPja7DvKcV+9PnHC7A/g83A==" crossorigin="anonymous"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/10.4.1/languages/java.min.js" integrity="sha512-ku64EPM6PjpseXTZbyRs0ZfXSbVsmLe+XcXxO3tZf1zW2GxZ+aKH9LZWgl/CRI9AFkU3IL7Pc1mzcZiUuvk7FQ==" crossorigin="anonymous"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/10.4.1/languages/bash.min.js" integrity="sha512-Hg0ufGEvn0AuzKMU0psJ1iH238iUN6THh7EI0CfA0n1sd3yu6PYet4SaDMpgzN9L1yQHxfB3yc5ezw3PwolIfA==" crossorigin="anonymous"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/10.4.1/languages/json.min.js" integrity="sha512-37sW1XqaJmseHAGNg4N4Y01u6g2do6LZL8tsziiL5CMXGy04Th65OXROw2jeDeXLo5+4Fsx7pmhEJJw77htBFg==" crossorigin="anonymous"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/10.4.1/languages/dockerfile.min.js" integrity="sha512-eRNl3ty7GOJPBN53nxLgtSSj2rkYj5/W0Vg0MFQBw8xAoILeT6byOogENHHCRRvHil4pKQ/HbgeJ5DOwQK3SJA==" crossorigin="anonymous"></script>
+    <script>hljs.initHighlightingOnLoad();</script>
+    <script src="https://yupiik.github.io/yupiik-logging//js/minisite.js?v=1.0-SNAPSHOT"></script>
+    <script>$('.page-content-body').generatedNavMenu();</script>
+    
+<script src="https://cdnjs.cloudflare.com/ajax/libs/fuse.js/6.4.3/fuse.min.js" integrity="sha512-neoBxVNv0UMXjoilAYGxfWrSsW6iAVclx7vQKdPJ9Peet1bM5YQjU0aIB8LtH8iNPa+pAyMZprBBw2ZQ/Q1LjQ==" crossorigin="anonymous"></script>
+
+</body>
+</html>
