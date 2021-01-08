@@ -1,0 +1,160 @@
+= Yupiik Logging JUL integration
+
+== Use globally
+
+[source]
+----
+java .... -Djava.util.logging.manager=io.yupiik.logging.jul.YupiikLogManager ...
+----
+
+== Configuration
+
+Configuration is close to default JUL one with small differences:
+
+. handlers don't need to configure themselves in their constructor or so for common properties (formatter, level, ...), the framework does it automatically
+. `InlineFormatter` and `JsonFormatter` support aliases (reflection free instantiation) with `inline` and `json` you can use in the configuration
+
+== Standard handler
+
+`io.yupiik.logging.jul.handler.StandardHandler` enables to log on stdout and stderr.
+For all level from finest/debug to info it will go on stdout and others (warnings, errors/severes) will go on stderr.
+
+It can be configured with the `std` or `standard` alias too.
+
+There is also its companion `stdout` or `io.yupiik.logging.jul.handler.StdoutHandler` which only outputs on stdout.
+
+== File Handler
+
+A `io.yupiik.logging.jul.handler.LocalFileHandler` is also provided to be able to log in a file and rotate the log file.
+Indeed you can use JVM `FileHandler` but this one is a bit more powerful in practise if you don't run in a container and can't use a docker logging driver or equivalent.
+
+Here is its configuration - all are prefixed with `io.yupiik.logging.jul.handler.LocalFileHandler.` and the standard configuration (encoding, level, ...) is still supported even if not listed.
+
+[cols="1a,1a,4",options="header"]
+|===
+| Name                      | Default Value                                     | Description
+| filenamePattern           | ${application.base}/logs/logs.%s.%03d.log         | where log files are created, it uses String.format() and gives you the date and file number - in this order.
+| limit                     | 10 Megabytes                                      | limit size indicating the file should be rotated - in long format
+| dateCheckInterval         | 5 seconds                                         | how often the date should be computed to rotate the file (don't do it each time for performances reason, means you can get few records of next day in a file name with current day). In java Duration format (ex: `PT5S`).
+| bufferSize                | -1                                                | if positive the in memory buffer used to store data before flushing them to the disk (in bytes)
+| archiveDirectory          | ${application.base}/logs/archives/                | where compressed logs are put.
+| archiveFormat             | gzip                                              | zip or gzip.
+| archiveOlderThan          | -1                                                | how many days files are kept before being compressed
+| purgeOlderThan            | -1                                                | how many days files are kept before being deleted, note: it applies on archives and not log files so 2 days of archiving and 3 days of purge makes it deleted after 5 days.
+| compressionLevel          | -1                                                | In case of zip archiving the zip compression level (-1 for off or 0-9).
+|===
+
+== Pattern formatter
+
+The library also provides a pattern formatter.
+It does not use `String.format` as `SimpleFormatter` does and can be configured either with `io.yupiik.logging.jul.formatter.PatternFormatter.pattern` property or passing the pattern to the formatter alias (reflection free mode): `pattern(<pattern to use>)`.
+Its syntax uses `%` to mark elements of the log record. Here is the list:
+
+[cols="1a,4",options="header"]
+|===
+|Name|Description
+|%%|Escapes `%` character.
+|%n|End of line.
+|%l or %level|Log record level.
+|%m or %message|Log record message.
+|%c or %logger|Logger name.
+|%C or %class|Class name if exists or empty.
+|%M or %method|Method name if exists or empty.
+|%d or %date|The instant value. Note it can be followed by a date time formatter pattern between braces.
+|%x or %exception|The exception. It will be preceeded by a new line if existing to ensure it integrates well in log output.
+|%T or %threadId|Thread ID.
+|%t or %thread or %threadName|Thread name - only works in synchronous mode.
+|%uuid|Random UUID.
+|===
+
+Pattern example value: `%d [%l][%c][%C][%M] %m%x%n`, it will output lines like `1970-01-01T00:00:00Z [INFO][the.logger][the.source][the.method] test message\n`.
+
+== JSON formatter
+
+JSON formatter relies on JSON-B so ensure to add the related dependencies.
+It can be done with this list for example:
+
+[source,xml]
+----
+<dependency>
+  <groupId>org.apache.geronimo.specs</groupId>
+  <artifactId>geronimo-json_1.1_spec</artifactId>
+  <version>1.5</version>
+</dependency>
+<dependency>
+  <groupId>org.apache.geronimo.specs</groupId>
+  <artifactId>geronimo-jsonb_1.0_spec</artifactId>
+  <version>1.4</version>
+</dependency>
+<dependency>
+  <groupId>org.apache.johnzon</groupId>
+  <artifactId>johnzon-jsonb</artifactId>
+  <version>1.2.9</version>
+</dependency>
+----
+
+== Usage with GraalVM
+
+Yupiik Logging JUL is integrated with GraalVM native image feature.
+To enable it you must set in `native-image` command line the following system property: `-Djava.util.logging.manager=io.yupiik.logging.jul.YupiikLogManager`.
+Other required setup is done in the jar and automatically picked up by `native-image`.
+
+NOTE: yupiik-loggin-jul will set itself as JUL LogManager during the build time so ensure it does not compete with another logging framework.
+
+Once done you can run with no logging configuration or override it through the standard `java.util.logging.config.file` system property.
+
+Here is a sample configuration switching to JSON logging:
+
+[source,properties]
+----
+.handlers = io.yupiik.logging.jul.handler.StandardHandler
+io.yupiik.logging.jul.handler.StandardHandler.formatter = json
+----
+
+The same configuration for a standard inline logging (text style) but tuning the log level:
+
+[source,properties]
+----
+.handlers = io.yupiik.logging.jul.handler.StandardHandler
+io.yupiik.logging.jul.handler.StandardHandler.level = FINEST
+com.app.level = FINEST
+----
+
+Here is a configuration using a pattern:
+
+[source,properties]
+----
+.handlers = standard
+standard.formatter = pattern(%d [%l][%c][%C][%M] %m%x%n)
+----
+
+And finally a configuration using file output instead of standard one:
+
+[source,properties]
+----
+.handlers = file
+file.formatter = inline
+----
+
+== Arthur Integration (GraalVM)
+
+To use this module with link:https://geronimo.apache.org/arthur/[Arthur] you can use this configuration:
+
+[source,xml]
+----
+<plugin> <!-- mvn [package] -Parthur arthur:native-image -e -->
+  <groupId>org.apache.geronimo.arthur</groupId>
+  <artifactId>arthur-maven-plugin</artifactId>
+  <version>1.0.1</version>
+  <configuration>
+    <graalVersion>20.3.0.r11</graalVersion>
+    <main>com.app.YourMain</main>
+    <graalExtensions> <!-- if you also want slf4j support through JUL -->
+      <graalExtension>slf4j</graalExtension>
+    </graalExtensions>
+    <customOptions> <!-- this is what enables Yupiik JUL support -->
+      <customOption>-Djava.util.logging.manager=io.yupiik.logging.jul.YupiikLogManager</customOption>
+    </customOptions>
+  </configuration>
+</plugin>
+----

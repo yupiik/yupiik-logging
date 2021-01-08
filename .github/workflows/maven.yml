@@ -1,0 +1,46 @@
+name: Github CI
+
+on: [push, pull_request]
+
+env:
+  MAVEN_OPTS: -Dmaven.repo.local=/home/runner/work/yupiik-logging/yupiik-logging/.m2 -Dmaven.artifact.threads=256 -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn
+
+jobs:
+  build:
+    name: Main Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clone
+        uses: actions/checkout@v1
+      - name: Cache Maven Repository
+        uses: actions/cache@v1
+        with:
+          path: /home/runner/work/yupiik-logging/yupiik-logging/.m2
+          key: m2_repository
+      - name: Set up JDK
+        uses: actions/setup-java@v1
+        with:
+          java-version: '11.0.9'
+      - name: Build
+        run: mvn install
+      - name: Remove Snapshots Before Caching
+        run: find /home/runner/work/yupiik-logging/yupiik-logging/.m2 -name '*SNAPSHOT' | xargs rm -Rf
+  security_audit:
+    name: Security Audit
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clone
+        uses: actions/checkout@v1
+      - name: Cache Maven Repository
+        uses: actions/cache@v1
+        with:
+          path: /home/runner/work/yupiik-logging/yupiik-logging/.m2
+          key: m2_repository
+      - name: Set up JDK
+        uses: actions/setup-java@v1
+        with:
+          java-version: '11.0.9'
+      - name: Build
+        run: mvn install -DskipTests -Dexec.skip=true ossindex:audit
+      - name: Remove Snapshots Before Caching
+        run: find /home/runner/work/yupiik-logging/yupiik-logging/.m2 -name '*SNAPSHOT' | xargs rm -Rf
