@@ -55,7 +55,7 @@ class YupiikLoggersTest {
         YupiikLoggerFactory.set(previousLoggers);
 
         assertEquals(
-                "1970-01-01T00:00:00Z [INFO][YupiikLoggersTest.logAndConfigureLoggers] foo",
+                "1970-01-01T00:00:00.000Z [INFO][YupiikLoggersTest.logAndConfigureLoggers] foo",
                 buffer.toString(StandardCharsets.UTF_8).trim());
     }
 
