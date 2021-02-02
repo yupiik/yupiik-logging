@@ -194,7 +194,7 @@ public class YupiikLoggers {
         // now create parent tree
         Logger current = logger;
         while (current.getParent() == null) {
-            int dot = current.getName().indexOf('.');
+            int dot = current.getName().lastIndexOf('.');
             if (dot < 0) {
                 break;
             }
