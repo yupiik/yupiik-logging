@@ -14,15 +14,13 @@
   ~ specific language governing permissions and limitations
   ~ under the License.
   -->
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
   <groupId>io.yupiik.logging</groupId>
   <artifactId>yupiik-logging</artifactId>
   <name>Yupiik Logging</name>
-  <version>1.0.0-SNAPSHOT</version>
+  <version>1.0.0</version>
   <packaging>pom</packaging>
   <description>Yupiik Logging support</description>
   <url>https://www.yupiik.com/</url>
@@ -148,7 +146,7 @@
         <executions>
           <execution>
             <id>audit-dependencies</id>
-            <phase/>
+            <phase />
             <goals>
               <goal>audit</goal>
             </goals>
@@ -299,7 +297,7 @@
     <connection>scm:git:https://github.com/yupiik/yupiik-logging.git</connection>
     <developerConnection>scm:git:https://github.com/yupiik/yupiik-logging.git</developerConnection>
     <url>https://github.com/yupiik/yupiik-logging.git</url>
-    <tag>HEAD</tag>
+    <tag>yupiik-logging-1.0.0</tag>
   </scm>
 
   <distributionManagement>
