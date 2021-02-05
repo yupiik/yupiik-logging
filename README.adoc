@@ -17,3 +17,20 @@
 = Yupiik Logging
 
 See link:https://yupiik.github.io/yupiik-logging/.
+
+== Build
+
+Build is just about running `mvn package` on the project.
+
+Minisite build/publish commands are in the root pom.xml (`mvn clean yupiik-tools:minisite@doc`).
+
+A small trick can be needed to run the integration test depending your local setup.
+If you have write permission issues with docker do the following:
+
+. cp integration-test/projects/jul /tmp
+. cd /tmp/jul
+. sed 's/project\.version/<yupiik logging current version>/' pom.xml
+. mvn package
+
+It will download in the local m2 repository graalvm and test dependencies.
+Since we mount it in the test docker image it will avoid downloads during the test and therefore permission issues.
