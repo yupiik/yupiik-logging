@@ -30,7 +30,7 @@ class JULTest {
     private static GenericContainer<?> container;
 
     @BeforeAll
-    static void start() throws IOException, InterruptedException {
+    static void start() {
         container = new GenericContainer<>("quay.io/quarkus/centos-quarkus-maven:20.3.0-java11");
         container.setWorkingDirectory("/opt/projects");
         container.withFileSystemBind(System.getProperty("maven.test.repository"), "/home/quarkus/.m2/repository");

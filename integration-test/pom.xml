@@ -25,6 +25,11 @@
   <artifactId>integration-test</artifactId>
   <name>Yupiik Logging :: Integration Tests</name>
 
+  <properties>
+    <graalvm.version>20.3.0</graalvm.version> <!-- ensure to edit projects/*pom.xml too -->
+    <graalvm.url>https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-${graalvm.version}/graalvm-ce-java11-linux-amd64-${graalvm.version}.tar.gz</graalvm.url>
+  </properties>
+
   <dependencies>
     <dependency>
       <groupId>${project.groupId}</groupId>

@@ -34,3 +34,5 @@ If you have write permission issues with docker do the following:
 
 It will download in the local m2 repository graalvm and test dependencies.
 Since we mount it in the test docker image it will avoid downloads during the test and therefore permission issues.
+
+TIP: you can need to run the integration test arthur command before being able to build the whole project since it relies on the presence of the distribution if docker container can't write to your local maven repository.
