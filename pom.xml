@@ -245,6 +245,9 @@
       <activation>
         <activeByDefault>false</activeByDefault>
       </activation>
+      <properties>
+        <skip.it>true</skip.it>
+      </properties>
       <build>
         <plugins>
           <plugin>

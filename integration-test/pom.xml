@@ -63,6 +63,7 @@
         <artifactId>maven-surefire-plugin</artifactId>
         <version>3.0.0-M5</version>
         <configuration>
+          <skip>${skip.it}</skip>
           <systemPropertyVariables>
             <java.util.logging.manager>io.yupiik.logging.jul.YupiikLogManager</java.util.logging.manager>
             <project.version>${project.version}</project.version>
