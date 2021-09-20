@@ -33,6 +33,11 @@ public class JsonFormatter extends Formatter {
     private final Jsonb mapper = JsonbBuilder.create(new JsonbConfig().setProperty("johnzon.skip-cdi", true));
 
     private boolean useUUID;
+    private boolean formatMessage = true;
+
+    public void setFormatMessage(final boolean formatMessage) {
+        this.formatMessage = formatMessage;
+    }
 
     public void setUseUUID(final boolean useUUID) {
         this.useUUID = useUUID;
@@ -40,7 +45,7 @@ public class JsonFormatter extends Formatter {
 
     @Override
     public String format(final LogRecord record) {
-        final var object = new Record(record);
+        final var object = new Record(record, formatMessage ? formatMessage(record) : record.getMessage());
         if (useUUID) {
             object.uuid = UUID.randomUUID().toString();
         }
@@ -70,13 +75,13 @@ public class JsonFormatter extends Formatter {
         private final OffsetDateTime timestamp;
         private String uuid;
 
-        private Record(final LogRecord record) {
+        private Record(final LogRecord record, final String message) {
             this.timestamp = OffsetDateTime.ofInstant(Instant.ofEpochMilli(record.getMillis()), UTC);
             this.level = record.getLevel().getName();
             this.logger = record.getLoggerName();
             this.clazz = record.getSourceClassName();
             this.method = record.getSourceMethodName();
-            this.message = record.getMessage();
+            this.message = message;
             this.exception = record.getThrown() == null ? null : toString(record.getThrown());
         }
 

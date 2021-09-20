@@ -281,8 +281,12 @@ public class YupiikLoggers {
                     }
                     if (formatter.startsWith("json(") && formatter.endsWith(")")) {
                         final var conf = formatter.substring("json(".length(), formatter.length() - 1);
+                        final var config = Stream.of(conf.split(";"))
+                                .map(it -> it.split("="))
+                                .collect(toMap(it -> it[0], it -> it[1]));
                         final var jsonFormatter = new JsonFormatter();
-                        jsonFormatter.setUseUUID(Boolean.parseBoolean(conf));
+                        jsonFormatter.setUseUUID(Boolean.parseBoolean(config.get("useUUID")));
+                        jsonFormatter.setFormatMessage(Boolean.parseBoolean(config.get("formatMessage")));
                         handler.setFormatter(jsonFormatter);
                         break;
                     }
