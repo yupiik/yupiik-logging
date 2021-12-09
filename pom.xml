@@ -20,7 +20,7 @@
   <groupId>io.yupiik.logging</groupId>
   <artifactId>yupiik-logging</artifactId>
   <name>Yupiik Logging</name>
-  <version>1.0.2</version>
+  <version>1.0.3-SNAPSHOT</version>
   <packaging>pom</packaging>
   <description>Yupiik Logging support</description>
   <url>https://www.yupiik.com/</url>
