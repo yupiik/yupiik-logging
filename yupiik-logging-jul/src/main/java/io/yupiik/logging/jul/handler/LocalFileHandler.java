@@ -71,6 +71,9 @@ public class LocalFileHandler extends Handler {
     private final ReadWriteLock writerLock = new ReentrantReadWriteLock();
     private final Lock backgroundTaskLock = new ReentrantLock();
     private volatile boolean closed;
+    private boolean noRotation;
+    private boolean overwrite;
+    private boolean truncateIfExists;
 
     public LocalFileHandler() {
         configure();
@@ -81,7 +84,10 @@ public class LocalFileHandler extends Handler {
 
         final String className = LocalFileHandler.class.getName(); //allow classes to override
 
-        dateCheckInterval = getProperty(className + ".dateCheckInterval", Duration::parse, () -> Duration.ofSeconds(5)).toMillis();
+        noRotation = getProperty(className + ".noRotation", Boolean::parseBoolean, () -> false);
+        overwrite = getProperty(className + ".overwrite", Boolean::parseBoolean, () -> false);
+        truncateIfExists = getProperty(className + ".truncateIfExists", Boolean::parseBoolean, () -> false);
+        dateCheckInterval = noRotation ? -1 : getProperty(className + ".dateCheckInterval", Duration::parse, () -> Duration.ofSeconds(5)).toMillis();
         filenamePattern = replace(getProperty(className + ".filenamePattern", identity(), () -> filenamePattern));
         limit = getProperty(className + ".limit", Long::parseLong, () -> 10 * 1024 * 1024L) /*10m*/;
 
@@ -100,7 +106,6 @@ public class LocalFileHandler extends Handler {
         filenameRegex = Pattern.compile(fileNameReg);
 
         compressionLevel = getProperty(className + ".compressionLevel", Integer::parseInt, () -> Deflater.DEFAULT_COMPRESSION);
-        ;
         archiveExpiryDuration = getProperty(className + ".archiveOlderThan", v -> Duration.parse(v).toMillis(), () -> -1L);
         archiveDir = new File(replace(getProperty(className + ".archiveDirectory", identity(), () -> "${application.base}/logs/archives/")));
         archiveFormat = replace(getProperty(className + ".archiveFormat", identity(), () -> archiveFormat));
@@ -129,18 +134,14 @@ public class LocalFileHandler extends Handler {
         }
 
         final long now = System.currentTimeMillis();
-        final String tsDate;
         // just do it once / sec if we have a lot of log, can make some log appearing in the wrong file but better than doing it each time
-        if (now - lastTimestamp > dateCheckInterval) { // using as much as possible volatile to avoid to lock too much
+        if (dateCheckInterval < 0 || now - lastTimestamp > dateCheckInterval) { // using as much as possible volatile to avoid to lock too much
             lastTimestamp = now;
-            tsDate = currentDate();
-        } else {
-            tsDate = null;
         }
 
         try {
             writerLock.readLock().lock();
-            rotateIfNeeded(tsDate);
+            rotateIfNeeded();
 
             final String result;
             try {
@@ -167,7 +168,7 @@ public class LocalFileHandler extends Handler {
         }
     }
 
-    private void rotateIfNeeded(final String currentDate) {
+    private void rotateIfNeeded() {
         if (!closed && writer == null) {
             try {
                 writerLock.readLock().unlock();
@@ -180,7 +181,11 @@ public class LocalFileHandler extends Handler {
                 writerLock.writeLock().unlock();
                 writerLock.readLock().lock();
             }
-        } else if (shouldRotate(currentDate)) {
+            return;
+        }
+
+        final String currentDate = currentDate();
+        if (!noRotation && shouldRotate(currentDate)) {
             try {
                 writerLock.readLock().unlock();
                 writerLock.writeLock().lock();
@@ -240,11 +245,11 @@ public class LocalFileHandler extends Handler {
         }
     }
 
-    protected void openWriter() {
+    protected synchronized void openWriter() {
         final long beforeRotation = System.currentTimeMillis();
 
         writerLock.writeLock().lock();
-        OutputStream fos = null;
+        OutputStream fos;
         OutputStream os = null;
         try {
             File pathname;
@@ -257,10 +262,10 @@ public class LocalFileHandler extends Handler {
                     return;
                 }
                 currentIndex++;
-            } while (pathname.isFile()); // loop to ensure we don't overwrite existing files
+            } while (!overwrite && pathname.isFile()); // loop to ensure we don't overwrite existing files
 
             final String encoding = getEncoding();
-            fos = new FileOutputStream(pathname, true);
+            fos = new FileOutputStream(pathname, !truncateIfExists);
             os = new CountingStream(bufferSize > 0 ? new BufferedOutputStream(fos, bufferSize) : fos);
             writer = new PrintWriter((encoding != null) ? new OutputStreamWriter(os, encoding) : new OutputStreamWriter(os), false);
             writer.write(getFormatter().getHead(this));

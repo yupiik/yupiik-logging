@@ -49,6 +49,9 @@ Here is its configuration - all are prefixed with `io.yupiik.logging.jul.handler
 |===
 | Name                      | Default Value                                     | Description
 | filenamePattern           | ${application.base}/logs/logs.%s.%03d.log         | where log files are created, it uses String.format() and gives you the date and file number - in this order.
+| noRotation                | false                                             | if `true`, once a log file is opened, it is kept for the life of the process.
+| overwrite                 | false                                             | if `true`, existing files are reused.
+| truncateIfExists          | false                                             | if `true`, opening a file is not in append mode (previous content is erased).
 | limit                     | 10 Megabytes                                      | limit size indicating the file should be rotated - in long format
 | dateCheckInterval         | 5 seconds                                         | how often the date should be computed to rotate the file (don't do it each time for performances reason, means you can get few records of next day in a file name with current day). In java Duration format (ex: `PT5S`).
 | bufferSize                | -1                                                | if positive the in memory buffer used to store data before flushing them to the disk (in bytes)

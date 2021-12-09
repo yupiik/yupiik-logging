@@ -19,11 +19,12 @@ import org.junit.jupiter.api.Test;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileFilter;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -44,13 +45,7 @@ class LocalFileHandlerTest {
     @Test
     public void logAndRotate() throws IOException {
         final File out = new File("target/LocalFileHandlerTest/logs/");
-        if (out.exists()) {
-            for (final File file : List.of(out.listFiles(pathname -> pathname.getName().startsWith("test")))) {
-                if (!file.delete()) {
-                    file.deleteOnExit();
-                }
-            }
-        }
+        cleanup(out);
 
         final AtomicReference<String> today = new AtomicReference<>();
         final Map<String, String> config = new HashMap<>();
@@ -111,6 +106,56 @@ class LocalFileHandlerTest {
         assertTrue(new File(out, "test.day2.0.log").exists());
 
         handler.close();
+    }
+
+    @Test
+    public void overwrite() throws IOException {
+        final File out = new File("target/LocalFileHandlerTest_overwrite/logs/");
+        cleanup(out);
+
+        final AtomicReference<String> today = new AtomicReference<>();
+        final Map<String, String> config = new HashMap<>();
+
+        // initial config
+        today.set("day1");
+        config.put("overwrite", "true");
+        config.put("truncateIfExists", "true");
+        config.put("filenamePattern", "target/LocalFileHandlerTest/logs/test.log");
+        config.put("level", "INFO");
+
+        for (int i = 0; i < 3; i++) {
+            final LocalFileHandler handler = new LocalFileHandler() {
+                @Override
+                protected String currentDate() {
+                    return today.get();
+                }
+
+                @Override
+                protected <T> T getProperty(final String name, final Function<String, T> mapper, final Supplier<T> defaultValue) {
+                    final String s = config.get(name.substring(name.lastIndexOf('.') + 1));
+                    return s != null ? mapper.apply(s) : defaultValue.get();
+                }
+            };
+            handler.setFormatter(new MessageOnlyFormatter());
+            handler.publish(new LogRecord(Level.INFO, "data_" + i));
+            handler.close();
+            assertEquals("data_" + i, Files.readString(Path.of(config.get("filenamePattern"))).strip());
+        }
+    }
+
+    private void cleanup(final File out) {
+        if (!out.exists()) {
+            return;
+        }
+        final var files = out.listFiles(pathname -> pathname.getName().startsWith("test"));
+        if (files == null) {
+            return;
+        }
+        for (final File file : List.of(files)) {
+            if (file != null && !file.delete()) {
+                file.deleteOnExit();
+            }
+        }
     }
 
     public static class MessageOnlyFormatter extends Formatter {
