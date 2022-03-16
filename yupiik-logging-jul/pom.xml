@@ -32,24 +32,18 @@
       <version>1.5</version>
       <scope>provided</scope>
     </dependency>
-    <dependency>
-      <groupId>org.apache.geronimo.specs</groupId>
-      <artifactId>geronimo-jsonb_1.0_spec</artifactId>
-      <version>1.4</version>
-      <scope>provided</scope>
-    </dependency>
 
     <dependency>
       <groupId>org.graalvm.nativeimage</groupId>
       <artifactId>svm</artifactId>
-      <version>20.3.0</version>
+      <version>22.0.0.2</version>
       <scope>provided</scope>
     </dependency>
 
     <dependency>
       <groupId>org.apache.johnzon</groupId>
-      <artifactId>johnzon-jsonb</artifactId>
-      <version>1.2.9</version>
+      <artifactId>johnzon-core</artifactId>
+      <version>1.2.16</version>
       <scope>test</scope>
     </dependency>
   </dependencies>

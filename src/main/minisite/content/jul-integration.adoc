@@ -89,7 +89,7 @@ Pattern example value: `%d [%l][%c][%C][%M] %m%x%n`, it will output lines like `
 
 == JSON formatter
 
-JSON formatter relies on JSON-B so ensure to add the related dependencies.
+JSON formatter relies on JSON-B until 1.0.2 and JSON-P starting with 1.0.3 so ensure to add the related dependencies.
 It can be done with this list for example:
 
 [source,xml]
@@ -100,14 +100,9 @@ It can be done with this list for example:
   <version>1.5</version>
 </dependency>
 <dependency>
-  <groupId>org.apache.geronimo.specs</groupId>
-  <artifactId>geronimo-jsonb_1.0_spec</artifactId>
-  <version>1.4</version>
-</dependency>
-<dependency>
   <groupId>org.apache.johnzon</groupId>
-  <artifactId>johnzon-jsonb</artifactId>
-  <version>1.2.9</version>
+  <artifactId>johnzon-core</artifactId>
+  <version>1.2.16</version>
 </dependency>
 ----
 
