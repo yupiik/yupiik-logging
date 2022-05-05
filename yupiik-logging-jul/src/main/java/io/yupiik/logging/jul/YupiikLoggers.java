@@ -36,7 +36,6 @@ import java.util.Enumeration;
 import java.util.Map;
 import java.util.Properties;
 import java.util.ResourceBundle;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -50,7 +49,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
 
-import static java.lang.StackWalker.Option.RETAIN_CLASS_REFERENCE;
 import static java.util.Collections.enumeration;
 import static java.util.Locale.ROOT;
 import static java.util.Optional.ofNullable;
@@ -101,17 +99,6 @@ public class YupiikLoggers {
             return existing;
         }
         return newInstance;
-    }
-
-    private Module findModule() {
-        return StackWalker
-                .getInstance(Set.of(RETAIN_CLASS_REFERENCE), 5)
-                .walk(f -> f.filter(it -> !"io.yupiik.logging.jul.logger.YupiikLogger".equals(it.getClassName()) &&
-                                !"io.yupiik.logging.jul.logger.YupiikLoggers".equals(it.getClassName()))
-                        .findFirst()
-                        .map(StackWalker.StackFrame::getDeclaringClass)
-                        .map(Class::getModule))
-                .orElse(null);
     }
 
     public String getProperty(final String name) {
