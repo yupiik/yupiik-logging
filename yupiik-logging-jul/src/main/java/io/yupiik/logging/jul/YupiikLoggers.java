@@ -35,6 +35,8 @@ import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.Map;
 import java.util.Properties;
+import java.util.ResourceBundle;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -48,6 +50,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
 
+import static java.lang.StackWalker.Option.RETAIN_CLASS_REFERENCE;
 import static java.util.Collections.enumeration;
 import static java.util.Locale.ROOT;
 import static java.util.Optional.ofNullable;
@@ -81,7 +84,7 @@ public class YupiikLoggers {
 
     public boolean addLogger(final Logger logger) {
         if (!YupiikLogger.class.isInstance(logger)) {
-            state.loggers.putIfAbsent(logger.getName(), createLogger(logger.getName(), logger.getResourceBundleName()));
+            state.loggers.putIfAbsent(logger.getName(), createLogger(logger.getName(), logger.getResourceBundleName(), logger.getResourceBundle()));
             return false;
         }
         return state.loggers.putIfAbsent(logger.getName(), YupiikLogger.class.cast(logger)) == null;
@@ -92,12 +95,23 @@ public class YupiikLoggers {
         if (logger != null) {
             return logger;
         }
-        final var newInstance = createLogger(name, bundle);
+        final var newInstance = createLogger(name, bundle, null);
         final var existing = state.loggers.putIfAbsent(name, newInstance);
         if (existing != null) {
             return existing;
         }
         return newInstance;
+    }
+
+    private Module findModule() {
+        return StackWalker
+                .getInstance(Set.of(RETAIN_CLASS_REFERENCE), 5)
+                .walk(f -> f.filter(it -> !"io.yupiik.logging.jul.logger.YupiikLogger".equals(it.getClassName()) &&
+                                !"io.yupiik.logging.jul.logger.YupiikLoggers".equals(it.getClassName()))
+                        .findFirst()
+                        .map(StackWalker.StackFrame::getDeclaringClass)
+                        .map(Class::getModule))
+                .orElse(null);
     }
 
     public String getProperty(final String name) {
@@ -159,6 +173,7 @@ public class YupiikLoggers {
             state.configuration.clear();
             state.configuration.putAll(newConfig);
         }
+        invokeListeners();
     }
 
     public void updateConfiguration(final Function<String, BiFunction<String, String, String>> mapper) {
@@ -171,6 +186,33 @@ public class YupiikLoggers {
                 state.configuration.put(entry.getKey(), newValue);
             }
         }
+        invokeListeners();
+    }
+
+    private void invokeListeners() {
+        if (state.listeners.isEmpty()) {
+            return;
+        }
+        Throwable firstError = null;
+        for (final Runnable c : state.listeners.values()) { // mimic JVM behavior there
+            try {
+                c.run();
+            } catch (final ThreadDeath death) {
+                throw death;
+            } catch (final Error | RuntimeException x) {
+                if (firstError == null) {
+                    firstError = x;
+                } else {
+                    firstError.addSuppressed(x);
+                }
+            }
+        }
+        if (Error.class.isInstance(firstError)) {
+            throw Error.class.cast(firstError);
+        }
+        if (RuntimeException.class.isInstance(firstError)) {
+            throw RuntimeException.class.cast(firstError);
+        }
     }
 
     public void addConfigurationListener(final Runnable listener) {
@@ -181,14 +223,14 @@ public class YupiikLoggers {
         state.listeners.remove(listener);
     }
 
-    private YupiikLogger createLogger(final String name, final String bundle) {
+    private YupiikLogger createLogger(final String name, final String bundle, final ResourceBundle resourceBundle) {
         try { // will test if already read so fine to call each time
             readConfiguration();
         } catch (final IOException e) {
             throw new IllegalStateException(e);
         }
 
-        final var logger = new YupiikLogger(name, bundle);
+        final var logger = new YupiikLogger(name, bundle, resourceBundle);
         configure(logger);
 
         // now create parent tree
@@ -224,7 +266,8 @@ public class YupiikLoggers {
                         .asSubclass(Filter.class)
                         .getConstructor()
                         .newInstance());
-            } catch (final InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException | ClassNotFoundException e) {
+            } catch (final InstantiationException | IllegalAccessException | InvocationTargetException |
+                           NoSuchMethodException | ClassNotFoundException e) {
                 throw new IllegalArgumentException(e);
             }
         }
@@ -296,7 +339,8 @@ public class YupiikLoggers {
                                 .asSubclass(Formatter.class)
                                 .getConstructor()
                                 .newInstance());
-                    } catch (final InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException | ClassNotFoundException e) {
+                    } catch (final InstantiationException | IllegalAccessException | InvocationTargetException |
+                                   NoSuchMethodException | ClassNotFoundException e) {
                         throw new IllegalArgumentException(e);
                     }
             }
@@ -350,7 +394,8 @@ public class YupiikLoggers {
                             .asSubclass(Handler.class)
                             .getConstructor()
                             .newInstance();
-                } catch (final InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException | ClassNotFoundException e) {
+                } catch (final InstantiationException | IllegalAccessException | InvocationTargetException |
+                               NoSuchMethodException | ClassNotFoundException e) {
                     throw new IllegalArgumentException(e);
                 }
         }

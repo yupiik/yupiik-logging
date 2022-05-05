@@ -40,9 +40,16 @@ public class YupiikLogger extends Logger {
     }
 
     private volatile Logger delegate;
+    private final ResourceBundle bundle;
 
-    public YupiikLogger(final String name, final String resourceBundleName) {
-        super(name, resourceBundleName);
+    public YupiikLogger(final String name, final String resourceBundleName, final ResourceBundle bundle) {
+        super(name, bundle == null ? resourceBundleName : null);
+        this.bundle = bundle == null ? super.getResourceBundle() : bundle;
+    }
+
+    @Override
+    public ResourceBundle getResourceBundle() {
+        return bundle;
     }
 
     private Logger getDelegate() {
