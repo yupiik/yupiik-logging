@@ -31,7 +31,7 @@ class JULTest {
 
     @BeforeAll
     static void start() {
-        container = new GenericContainer<>("quay.io/quarkus/centos-quarkus-maven:20.3.0-java11");
+        container = new GenericContainer<>("quay.io/quarkus/centos-quarkus-maven:22.1.0-java11");
         container.setWorkingDirectory("/opt/projects");
         container.withFileSystemBind(System.getProperty("maven.test.repository"), "/home/quarkus/.m2/repository");
         container.withFileSystemBind(System.getProperty("maven.test.projects", "projects"), "/opt/projects");
