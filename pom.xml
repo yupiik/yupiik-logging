@@ -189,7 +189,7 @@
               <logoText>Logging</logoText>
               <copyright>Yupiik &amp;copy; / Logging</copyright>
               <indexSubTitle>The Yupiik logging helper library.</indexSubTitle>
-              <siteBase>https://yupiik.github.io/yupiik-logging</siteBase>
+              <siteBase>//www.yupiik.io/yupiik-logging</siteBase>
               <target>${project.build.directory}/${project.artifactId}</target>
               <git>
                 <ignore>${minisite.github-pages.skip}</ignore>
