@@ -2,7 +2,7 @@
   "skip": false,
   "name": "Logging extensions",
   "description": "Logging Extensions (JUL + GraalVM integration).",
-  "website": "https://github.com/yupiik/yupiik-logging",
+  "website": "https://www.yupiik.io/yupiik-logging",
   "logo": "https://www.yupiik.com/img/logo.png",
   "categories": [
     "jul",
