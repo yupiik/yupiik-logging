@@ -22,7 +22,7 @@
   <groupId>io.yupiik.logging</groupId>
   <artifactId>yupiik-logging</artifactId>
   <name>Yupiik Logging</name>
-  <version>1.0.5-SNAPSHOT</version>
+  <version>1.0.5</version>
   <packaging>pom</packaging>
   <description>Yupiik Logging support</description>
   <url>https://www.yupiik.com/</url>
@@ -312,7 +312,7 @@ under the License.
     <connection>scm:git:https://github.com/yupiik/yupiik-logging.git</connection>
     <developerConnection>scm:git:https://github.com/yupiik/yupiik-logging.git</developerConnection>
     <url>https://github.com/yupiik/yupiik-logging.git</url>
-    <tag>yupiik-logging-1.0.3</tag>
+    <tag>yupiik-logging-1.0.5</tag>
   </scm>
 
   <distributionManagement>
