@@ -89,7 +89,7 @@ public class YupiikLoggers {
     }
 
     public Logger getLogger(final String name, final String bundle) {
-        final var logger = state.loggers.get(name);
+        final var logger = getLoggerOrNull(name);
         if (logger != null) {
             return logger;
         }
@@ -99,6 +99,10 @@ public class YupiikLoggers {
             return existing;
         }
         return newInstance;
+    }
+
+    public YupiikLogger getLoggerOrNull(final String name) {
+        return state.loggers.get(name);
     }
 
     public String getProperty(final String name) {

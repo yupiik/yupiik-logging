@@ -31,7 +31,7 @@ public class YupiikLogManager extends LogManager {
 
     @Override
     public Logger getLogger(final String name) {
-        return YupiikLoggerFactory.get().getLogger(name, null);
+        return YupiikLoggerFactory.get().getLoggerOrNull(name);
     }
 
     @Override
