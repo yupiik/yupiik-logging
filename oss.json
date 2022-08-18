@@ -4,6 +4,7 @@
   "description": "Logging Extensions (JUL + GraalVM integration).",
   "website": "https://www.yupiik.io/yupiik-logging",
   "logo": "https://www.yupiik.com/img/logo.png",
+  "group": "Yupiik Stack",
   "categories": [
     "jul",
     "native-image",
