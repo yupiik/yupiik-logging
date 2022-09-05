@@ -27,6 +27,8 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -76,6 +78,8 @@ public class LocalFileHandler extends Handler {
     private boolean noRotation;
     private boolean overwrite;
     private boolean truncateIfExists;
+    private String zeroDate;
+    private Supplier<String> currentDate;
 
     public LocalFileHandler() {
         this(Clock.systemDefaultZone());
@@ -87,8 +91,6 @@ public class LocalFileHandler extends Handler {
     }
 
     private void configure() {
-        date = currentDate();
-
         final String className = LocalFileHandler.class.getName(); //allow classes to override
 
         noRotation = getProperty(className + ".noRotation", Boolean::parseBoolean, () -> false);
@@ -100,7 +102,20 @@ public class LocalFileHandler extends Handler {
 
         final int lastSep = Math.max(filenamePattern.lastIndexOf('/'), filenamePattern.lastIndexOf('\\'));
         String fileNameReg = lastSep >= 0 ? filenamePattern.substring(lastSep + 1) : filenamePattern;
-        fileNameReg = fileNameReg.replace("%s", "\\d{4}\\-\\d{2}\\-\\d{2}"); // date.
+        if (fileNameReg.contains("%sHm")) {
+            fileNameReg = fileNameReg.replace("%sHm", "\\d{4}\\-\\d{2}\\-\\d{2}-\\d{2}-\\d{2}");
+            zeroDate = "0000-00-00-00-00";
+            final var formatter= DateTimeFormatter.ofPattern("yyyy-MM-dd-HH-mm");
+            currentDate = () -> LocalDateTime.ofInstant(clock.instant(), clock.getZone()).format(formatter);
+        } else if (fileNameReg.contains("%sH")) {
+            fileNameReg = fileNameReg.replace("%sH", "\\d{4}\\-\\d{2}\\-\\d{2}-\\d{2}");
+            final var formatter= DateTimeFormatter.ofPattern("yyyy-MM-dd-HH");
+            currentDate = () -> LocalDateTime.ofInstant(clock.instant(), clock.getZone()).format(formatter);
+        } else /* if (fileNameReg.contains("%s")) */ {
+            fileNameReg = fileNameReg.replace("%s", "\\d{4}\\-\\d{2}\\-\\d{2}");
+            zeroDate = "0000-00-00";
+            currentDate = () -> LocalDate.ofInstant(clock.instant(), clock.getZone()).toString();
+        }
         {   // file rotation index
             final int indexIdxStart = fileNameReg.indexOf('%');
             if (indexIdxStart >= 0) {
@@ -127,12 +142,14 @@ public class LocalFileHandler extends Handler {
             // no-op
         }
 
-        //setErrorManager(new ErrorManager());
         lastTimestamp = clock.instant().toEpochMilli();
+        date = currentDate();
+
+        // setErrorManager(new ErrorManager());
     }
 
     protected String currentDate() {
-        return LocalDate.ofInstant(clock.instant(), clock.getZone()).toString();
+        return currentDate.get();
     }
 
     @Override
@@ -338,7 +355,7 @@ public class LocalFileHandler extends Handler {
     }
 
     private void archiveIfNeeded(final long now) {
-        final File[] logs = new File(formatFilename(filenamePattern, "0000-00-00", 0)).getParentFile()
+        final File[] logs = new File(formatFilename(filenamePattern, zeroDate, 0)).getParentFile()
                 .listFiles((dir, name) -> filenameRegex.matcher(name).matches());
 
         if (logs != null) {
