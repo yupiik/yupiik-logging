@@ -16,6 +16,7 @@
 package io.yupiik.logging.jul.handler;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -25,6 +26,9 @@ import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Clock;
+import java.time.Instant;
+import java.time.ZoneId;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -37,9 +41,13 @@ import java.util.logging.Formatter;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 
+import static java.lang.Thread.sleep;
+import static java.time.temporal.ChronoUnit.HOURS;
 import static java.util.stream.Collectors.toList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 class LocalFileHandlerTest {
     @Test
@@ -143,6 +151,73 @@ class LocalFileHandlerTest {
         }
     }
 
+    @Test
+    public void purgeMaxArchive(@TempDir final Path temp) throws IOException {
+        final var logs = Files.createDirectories(temp.resolve("logs"));
+
+        // initial config
+        final var config = new HashMap<String, String>();
+        config.put("archiveDirectory", logs.resolve("archives").toString()); // ~immediately for the test
+        config.put("archiveOlderThan", "PT0.001S"); // ~immediately for the test
+        config.put("maxArchives", "2");
+        config.put("filenamePattern", logs.resolve("app.%s.%03d.log").toString());
+        config.put("level", "INFO");
+        config.put("limit", "6"); // each record will rotate the file
+
+        final var now = new AtomicReference<>(Instant.now());
+        final var clock = new Clock() {
+            @Override
+            public ZoneId getZone() {
+                return ZoneId.of("UTC");
+            }
+
+            @Override
+            public Clock withZone(ZoneId zone) {
+                return null;
+            }
+
+            @Override
+            public Instant instant() {
+                return now.get();
+            }
+        };
+        final var handler = new LocalFileHandler(clock) {
+            @Override
+            protected <T> T getProperty(final String name, final Function<String, T> mapper, final Supplier<T> defaultValue) {
+                final String s = config.get(name.substring(name.lastIndexOf('.') + 1));
+                return s != null ? mapper.apply(s) : defaultValue.get();
+            }
+        };
+        handler.setFormatter(new MessageOnlyEOLFormatter());
+        final var expected = List.of(
+                List.of("app.2022-09-05.000.log"),
+                List.of("app.2022-09-05.000.log.gzip", "app.2022-09-05.001.log"),
+                List.of("app.2022-09-05.000.log.gzip", "app.2022-09-05.001.log.gzip", "app.2022-09-05.002.log"),
+                List.of("app.2022-09-05.001.log.gzip", "app.2022-09-05.002.log.gzip", "app.2022-09-05.003.log"),
+                List.of("app.2022-09-05.002.log.gzip", "app.2022-09-05.003.log.gzip", "app.2022-09-06.000.log")
+        ).iterator();
+        try {
+            for (int i = 0; i < 5; i++) {
+                final var debug = "iteration #" + i;
+                assertTrue(expected.hasNext(), debug);
+                now.set(now.get().plus(i, HOURS));
+                handler.publish(new LogRecord(Level.INFO, "data_" + i));
+                try (final var list = Files.walk(logs).filter(Files::isRegularFile)) {
+                    assertEquals(expected.next(), list.map(Path::getFileName).map(Path::toString).sorted().collect(toList()), debug);
+                }
+                try {
+                    sleep(30);
+                } catch (final InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    fail(e);
+                }
+            }
+            assertFalse(expected.hasNext());
+        } finally {
+            handler.close();
+        }
+    }
+
     private void cleanup(final File out) {
         if (!out.exists()) {
             return;
@@ -162,6 +237,13 @@ class LocalFileHandlerTest {
         @Override
         public String format(final LogRecord record) {
             return record.getMessage() + "\r";
+        }
+    }
+
+    public static class MessageOnlyEOLFormatter extends Formatter {
+        @Override
+        public String format(final LogRecord record) {
+            return record.getMessage() + "\n";
         }
     }
 }

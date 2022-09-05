@@ -17,18 +17,16 @@ package io.yupiik.logging.jul.handler;
 
 import java.io.BufferedOutputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.io.FilenameFilter;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.attribute.BasicFileAttributes;
-import java.sql.Timestamp;
+import java.time.Clock;
 import java.time.Duration;
+import java.time.LocalDate;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -40,6 +38,7 @@ import java.util.logging.Handler;
 import java.util.logging.LogManager;
 import java.util.logging.LogRecord;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 import java.util.zip.Deflater;
 import java.util.zip.GZIPOutputStream;
 import java.util.zip.ZipEntry;
@@ -49,7 +48,7 @@ import static java.util.function.Function.identity;
 
 // from https://github.com/apache/tomee/blob/master/tomee/tomee-juli/src/main/java/org/apache/tomee/jul/handler/rotating/LocalFileHandler.java
 public class LocalFileHandler extends Handler {
-    private static final int BUFFER_SIZE = 8102;
+    private final Clock clock;
 
     private long limit = 0;
     private int bufferSize = -1;
@@ -59,6 +58,7 @@ public class LocalFileHandler extends Handler {
     private String archiveFormat = "gzip";
     private long dateCheckInterval;
     private long archiveExpiryDuration;
+    private int maxArchives = -1;
     private int compressionLevel;
     private long purgeExpiryDuration;
     private File archiveDir;
@@ -68,6 +68,8 @@ public class LocalFileHandler extends Handler {
     private volatile String date;
     private volatile PrintWriter writer;
     private volatile int written;
+    private volatile File currentFile;
+
     private final ReadWriteLock writerLock = new ReentrantReadWriteLock();
     private final Lock backgroundTaskLock = new ReentrantLock();
     private volatile boolean closed;
@@ -76,6 +78,11 @@ public class LocalFileHandler extends Handler {
     private boolean truncateIfExists;
 
     public LocalFileHandler() {
+        this(Clock.systemDefaultZone());
+    }
+
+    public LocalFileHandler(final Clock clock) {
+        this.clock = clock;
         configure();
     }
 
@@ -112,6 +119,7 @@ public class LocalFileHandler extends Handler {
         archiveFilenameRegex = Pattern.compile(fileNameReg + "\\." + archiveFormat);
 
         purgeExpiryDuration = getProperty(className + ".purgeOlderThan", v -> Duration.parse(v).toMillis(), () -> -1L);
+        maxArchives = getProperty(className + ".maxArchives", Integer::parseInt, () -> -1);
 
         try {
             bufferSize = getProperty(className + ".bufferSize", Integer::parseInt, () -> -1);
@@ -120,11 +128,11 @@ public class LocalFileHandler extends Handler {
         }
 
         //setErrorManager(new ErrorManager());
-        lastTimestamp = System.currentTimeMillis();
+        lastTimestamp = clock.instant().toEpochMilli();
     }
 
     protected String currentDate() {
-        return new Timestamp(System.currentTimeMillis()).toString().substring(0, 10);
+        return LocalDate.ofInstant(clock.instant(), clock.getZone()).toString();
     }
 
     @Override
@@ -133,7 +141,7 @@ public class LocalFileHandler extends Handler {
             return;
         }
 
-        final long now = System.currentTimeMillis();
+        final long now = clock.instant().toEpochMilli();
         // just do it once / sec if we have a lot of log, can make some log appearing in the wrong file but better than doing it each time
         if (dateCheckInterval < 0 || now - lastTimestamp > dateCheckInterval) { // using as much as possible volatile to avoid to lock too much
             lastTimestamp = now;
@@ -221,6 +229,7 @@ public class LocalFileHandler extends Handler {
             writer.write(getFormatter().getTail(this));
             writer.flush();
             writer.close();
+            currentFile = null;
             writer = null;
         } catch (final Exception e) {
             reportError(null, e, ErrorManager.CLOSE_FAILURE);
@@ -246,11 +255,11 @@ public class LocalFileHandler extends Handler {
     }
 
     protected synchronized void openWriter() {
-        final long beforeRotation = System.currentTimeMillis();
+        final var now = clock.instant();
+        final long beforeRotation = now.toEpochMilli();
 
         writerLock.writeLock().lock();
-        OutputStream fos;
-        OutputStream os = null;
+        OutputStream fos = null;
         try {
             File pathname;
             do {
@@ -259,22 +268,26 @@ public class LocalFileHandler extends Handler {
                 if (!parent.isDirectory() && !parent.mkdirs()) {
                     reportError("Unable to create [" + parent + "]", null, ErrorManager.OPEN_FAILURE);
                     writer = null;
+                    currentFile = null;
                     return;
                 }
                 currentIndex++;
             } while (!overwrite && pathname.isFile()); // loop to ensure we don't overwrite existing files
 
-            final String encoding = getEncoding();
             fos = new FileOutputStream(pathname, !truncateIfExists);
-            os = new CountingStream(bufferSize > 0 ? new BufferedOutputStream(fos, bufferSize) : fos);
-            writer = new PrintWriter((encoding != null) ? new OutputStreamWriter(os, encoding) : new OutputStreamWriter(os), false);
+            final var os = new CountingStream(bufferSize > 0 ? new BufferedOutputStream(fos, bufferSize) : fos);
+            final var encoding = getEncoding();
+            final var streamWriter = (encoding != null) ? new OutputStreamWriter(os, encoding) : new OutputStreamWriter(os);
+            writer = new PrintWriter(streamWriter, false);
             writer.write(getFormatter().getHead(this));
+            currentFile = pathname;
         } catch (final Exception e) {
             reportError(null, e, ErrorManager.OPEN_FAILURE);
             writer = null;
-            if (os != null) {
+            currentFile = null;
+            if (fos != null) {
                 try {
-                    os.close();
+                    fos.close();
                 } catch (final IOException e1) {
                     // no-op
                 }
@@ -294,47 +307,82 @@ public class LocalFileHandler extends Handler {
     }
 
     private void evict(final long now) {
-        if (purgeExpiryDuration > 0) { // purging archives
-            final File[] archives = archiveDir.listFiles((dir, name) -> archiveFilenameRegex.matcher(name).matches());
+        if (purgeExpiryDuration > 0) {
+            purgeArchives(now);
+        }
+        if (archiveExpiryDuration > 0) {
+            archiveIfNeeded(now);
+        }
+        if (maxArchives > 0) {
+            deleteUndesiredArchives();
+        }
+    }
 
-            if (archives != null) {
-                for (final File archive : archives) {
-                    try {
-                        final BasicFileAttributes attr = Files.readAttributes(archive.toPath(), BasicFileAttributes.class);
-                        if (now - attr.creationTime().toMillis() > purgeExpiryDuration) {
-                            if (!Files.deleteIfExists(archive.toPath())) {
-                                // dont try to delete on exit cause we will find it again
-                                reportError("Can't delete " + archive.getAbsolutePath() + ".", null, ErrorManager.GENERIC_FAILURE);
+    private void purgeArchives(final long now) {
+        final var archives = listArchives();
+        if (archives != null) {
+            for (final var archive : archives) {
+                try {
+                    final var attr = Files.readAttributes(archive.toPath(), BasicFileAttributes.class);
+                    if (now - attr.creationTime().toMillis() > purgeExpiryDuration) {
+                        if (!Files.deleteIfExists(archive.toPath())) {
+                            // dont try to delete on exit cause we will find it again
+                            reportError("Can't delete " + archive.getAbsolutePath() + ".", null, ErrorManager.GENERIC_FAILURE);
+                        }
+                    }
+                } catch (final IOException e) {
+                    throw new IllegalStateException(e);
+                }
+            }
+        }
+    }
+
+    private void archiveIfNeeded(final long now) {
+        final File[] logs = new File(formatFilename(filenamePattern, "0000-00-00", 0)).getParentFile()
+                .listFiles((dir, name) -> filenameRegex.matcher(name).matches());
+
+        if (logs != null) {
+            for (final var file : logs) {
+                try {
+                    final BasicFileAttributes attr = Files.readAttributes(file.toPath(), BasicFileAttributes.class);
+                    if (!file.equals(currentFile) && shouldArchive(now, attr)) {
+                        createArchive(file);
+                    }
+                } catch (final IOException e) {
+                    throw new IllegalStateException(e);
+                }
+            }
+        }
+    }
+
+    private void deleteUndesiredArchives() {
+        final var archives = listArchives();
+        if (archives != null) {
+            final var toDelete = archives.length - maxArchives;
+            if (toDelete > 0) {
+                final var sorted = Stream.of(archives)
+                        .sorted((a, b) -> { // older first
+                            try {
+                                return Files.readAttributes(a.toPath(), BasicFileAttributes.class).creationTime()
+                                        .compareTo(Files.readAttributes(b.toPath(), BasicFileAttributes.class).creationTime());
+                            } catch (final IOException ie) {
+                                getErrorManager().error(ie.getMessage(), ie, ErrorManager.GENERIC_FAILURE);
+                                return a.getName().compareTo(b.getName());
                             }
-                        }
-                    } catch (final IOException e) {
-                        throw new IllegalStateException(e);
-                    }
-                }
+                        }).toArray(File[]::new);
+                Stream.of(sorted)
+                        .limit(toDelete)
+                        .forEach(File::delete);
             }
         }
-        if (archiveExpiryDuration > 0) { // archiving log files
-            final File[] logs = new File(formatFilename(filenamePattern, "0000-00-00", 0)).getParentFile()
-                    .listFiles(new FilenameFilter() {
-                        @Override
-                        public boolean accept(final File dir, final String name) {
-                            return filenameRegex.matcher(name).matches();
-                        }
-                    });
+    }
 
-            if (logs != null) {
-                for (final File file : logs) {
-                    try {
-                        final BasicFileAttributes attr = Files.readAttributes(file.toPath(), BasicFileAttributes.class);
-                        if (attr.creationTime().toMillis() < now && now - attr.lastModifiedTime().toMillis() > archiveExpiryDuration) {
-                            createArchive(file);
-                        }
-                    } catch (final IOException e) {
-                        throw new IllegalStateException(e);
-                    }
-                }
-            }
-        }
+    private boolean shouldArchive(final long now, final BasicFileAttributes attr) {
+        return attr.creationTime().toMillis() < now && now - attr.lastModifiedTime().toMillis() > archiveExpiryDuration;
+    }
+
+    private File[] listArchives() {
+        return archiveDir.listFiles((dir, name) -> archiveFilenameRegex.matcher(name).matches());
     }
 
     private String formatFilename(final String pattern, final String date, final int index) {
@@ -353,25 +401,20 @@ public class LocalFileHandler extends Handler {
         }
 
         if (archiveFormat.equalsIgnoreCase("gzip")) {
-            try (final OutputStream outputStream = new BufferedOutputStream(new GZIPOutputStream(new FileOutputStream(target)))) {
-                final byte[] buffer = new byte[BUFFER_SIZE];
-                try (final FileInputStream inputStream = new FileInputStream(source)) {
-                    copyStream(inputStream, outputStream, buffer);
-                } catch (final IOException e) {
-                    throw new IllegalStateException(e);
-                }
+            try (final var outputStream = new BufferedOutputStream(new GZIPOutputStream(new FileOutputStream(target)))) {
+                Files.copy(source.toPath(), outputStream);
             } catch (final IOException e) {
                 throw new IllegalStateException(e);
             }
         } else { // consider file defines a zip whatever extension it is
-            try (final ZipOutputStream outputStream = new ZipOutputStream(new FileOutputStream(target))) {
+            try (final var outputStream = new ZipOutputStream(new FileOutputStream(target))) {
                 outputStream.setLevel(compressionLevel);
 
-                final byte[] buffer = new byte[BUFFER_SIZE];
-                try (final FileInputStream inputStream = new FileInputStream(source)) {
+                try {
                     final ZipEntry zipEntry = new ZipEntry(source.getName());
                     outputStream.putNextEntry(zipEntry);
-                    copyStream(inputStream, outputStream, buffer);
+                    Files.copy(source.toPath(), outputStream);
+                    outputStream.closeEntry();
                 } catch (final IOException e) {
                     throw new IllegalStateException(e);
                 }
@@ -385,13 +428,6 @@ public class LocalFileHandler extends Handler {
             }
         } catch (final IOException e) {
             throw new IllegalStateException(e);
-        }
-    }
-
-    private static void copyStream(final InputStream inputStream, final OutputStream outputStream, final byte[] buffer) throws IOException {
-        int n;
-        while ((n = inputStream.read(buffer)) != -1) {
-            outputStream.write(buffer, 0, n);
         }
     }
 
