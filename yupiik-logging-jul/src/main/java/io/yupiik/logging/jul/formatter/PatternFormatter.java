@@ -17,6 +17,8 @@ package io.yupiik.logging.jul.formatter;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.time.Duration;
+import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
@@ -49,6 +51,11 @@ public class PatternFormatter extends Formatter {
                 case '%':
                     final char marker = pattern.charAt(i + 1);
                     switch (marker) {
+                        case 'r':
+                            i++;
+                            flushBuilder(items, builder);
+                            items.add(new DurationSinceStartup());
+                            break;
                         case 'n':
                             i++;
                             flushBuilder(items, builder);
@@ -208,6 +215,15 @@ public class PatternFormatter extends Formatter {
         @Override
         public String extract(final Formatter formatter, final LogRecord record) {
             return value;
+        }
+    }
+
+    private static class DurationSinceStartup implements Item {
+        private final Instant startup = Instant.now();
+
+        @Override
+        public String extract(final Formatter formatter, final LogRecord record) {
+            return Long.toString(Duration.between(startup, Instant.now()).toMillis());
         }
     }
 

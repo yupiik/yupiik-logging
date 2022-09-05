@@ -82,6 +82,7 @@ Its syntax uses `%` to mark elements of the log record. Here is the list:
 |%x or %exception|The exception. It will be preceeded by a new line if existing to ensure it integrates well in log output.
 |%T or %threadId|Thread ID.
 |%t or %thread or %threadName|Thread name - only works in synchronous mode.
+|%r|Duration (in ms) since the startup of the application (creating of the pattern formatter actually).
 |%uuid|Random UUID.
 |===
 
