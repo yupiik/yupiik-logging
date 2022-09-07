@@ -109,7 +109,7 @@ class LocalFileHandlerTest {
         try { // ensure we tets the date
             Thread.sleep(1500);
         } catch (final InterruptedException e) {
-            Thread.interrupted();
+            Thread.currentThread().interrupt();
         }
         handler.publish(new LogRecord(Level.INFO, string10chars));
         assertTrue(new File(out, "test.day2.0.log").exists());
