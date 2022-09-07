@@ -28,6 +28,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Clock;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -40,12 +41,12 @@ import java.util.function.Supplier;
 import java.util.logging.Formatter;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
+import java.util.stream.Stream;
 
 import static java.lang.Thread.sleep;
 import static java.time.temporal.ChronoUnit.HOURS;
 import static java.util.stream.Collectors.toList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -164,6 +165,8 @@ class LocalFileHandlerTest {
         config.put("level", "INFO");
         config.put("limit", "6"); // each record will rotate the file
 
+        // if we want to not use that we should use a mocked filesystem since it does not support to set creation time
+        // so shouldArchive would have the mocked clock and the actual current clock for filesystem date checks
         final var now = new AtomicReference<>(Instant.now());
         final var clock = new Clock() {
             @Override
@@ -189,33 +192,47 @@ class LocalFileHandlerTest {
             }
         };
         handler.setFormatter(new MessageOnlyEOLFormatter());
-        final var expected = List.of(
-                List.of("app.2022-09-05.000.log"),
-                List.of("app.2022-09-05.000.log.gzip", "app.2022-09-05.001.log"),
-                List.of("app.2022-09-05.000.log.gzip", "app.2022-09-05.001.log.gzip", "app.2022-09-05.002.log"),
-                List.of("app.2022-09-05.001.log.gzip", "app.2022-09-05.002.log.gzip", "app.2022-09-05.003.log"),
-                List.of("app.2022-09-05.002.log.gzip", "app.2022-09-05.003.log.gzip", "app.2022-09-06.000.log")
-        ).iterator();
+
         try {
+            var previousDate = asDate(now.get());
+            var res = List.<String>of();
+            int fileIndex = 0;
             for (int i = 0; i < 5; i++) {
-                final var debug = "iteration #" + i;
-                assertTrue(expected.hasNext(), debug);
-                now.set(now.get().plus(i, HOURS));
-                handler.publish(new LogRecord(Level.INFO, "data_" + i));
-                try (final var list = Files.walk(logs).filter(Files::isRegularFile)) {
-                    assertEquals(expected.next(), list.map(Path::getFileName).map(Path::toString).sorted().collect(toList()), debug);
-                }
-                try {
-                    sleep(30);
-                } catch (final InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    fail(e);
-                }
+                res = purgeMaxArchiveIteration(logs, now, handler, i, fileIndex, res);
+
+                final var newDate = asDate(now.get());
+                fileIndex += !previousDate.equals(newDate) ? -fileIndex : 1;
+                previousDate = newDate;
             }
-            assertFalse(expected.hasNext());
         } finally {
             handler.close();
         }
+    }
+
+    private static List<String> purgeMaxArchiveIteration(final Path logs,
+                                                         final AtomicReference<Instant> now,
+                                                         final LocalFileHandler handler,
+                                                         final int i,
+                                                         final int fileIndex,
+                                                         final List<String> previousResult) throws IOException {
+        final var debug = "iteration #" + i;
+        final var currentDate = asDate(now.get());
+        final var expected = Stream.concat(
+                        previousResult.stream().skip(Math.max(0, previousResult.size() - 2)).map(it -> it.endsWith(".gzip") ? it : (it + ".gzip")),
+                        Stream.of("app." + currentDate + ".00" + fileIndex + ".log"))
+                .collect(toList());
+        now.set(now.get().plus(i, HOURS));
+        handler.publish(new LogRecord(Level.INFO, "data_" + i));
+        try (final var list = Files.walk(logs).filter(Files::isRegularFile)) {
+            assertEquals(expected, list.map(Path::getFileName).map(Path::toString).sorted().collect(toList()), debug);
+        }
+        try {
+            sleep(30);
+        } catch (final InterruptedException e) {
+            Thread.currentThread().interrupt();
+            fail(e);
+        }
+        return expected;
     }
 
     private void cleanup(final File out) {
@@ -245,5 +262,9 @@ class LocalFileHandlerTest {
         public String format(final LogRecord record) {
             return record.getMessage() + "\n";
         }
+    }
+
+    private static LocalDate asDate(final Instant instant) {
+        return instant.atZone(ZoneId.systemDefault()).toLocalDate();
     }
 }
