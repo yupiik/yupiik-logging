@@ -15,22 +15,17 @@
  */
 package io.yupiik.logging.jul.formatter;
 
-import javax.json.Json;
-import javax.json.JsonBuilderFactory;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
-import java.util.Map;
 import java.util.UUID;
 import java.util.logging.Formatter;
 import java.util.logging.LogRecord;
 
 public class JsonFormatter extends Formatter {
     private static final ZoneId UTC = ZoneId.of("UTC");
-
-    private final JsonBuilderFactory builder = Json.createBuilderFactory(Map.of());
 
     private boolean useUUID;
     private boolean formatMessage = true;
@@ -45,31 +40,31 @@ public class JsonFormatter extends Formatter {
 
     @Override
     public String format(final LogRecord record) {
-        final var json = builder.createObjectBuilder();
+        final var json = new StringBuilder("{");
         if (useUUID) {
-            json.add("uuid", UUID.randomUUID().toString());
+            json.append("\"uuid\":\"").append(UUID.randomUUID()).append("\",");
         }
-        json.add("timestamp", OffsetDateTime.ofInstant(Instant.ofEpochMilli(record.getMillis()), UTC).toString());
+        json.append("\"timestamp\":").append(JsonStrings.escape(OffsetDateTime.ofInstant(Instant.ofEpochMilli(record.getMillis()), UTC).toString()));
         if (record.getLevel() != null) {
-            json.add("level", record.getLevel().getName());
+            json.append(",\"level\":\"").append(record.getLevel().getName()).append("\"");
         }
         if (record.getLoggerName() != null) {
-            json.add("logger", record.getLoggerName());
+            json.append(",\"logger\":\"").append(record.getLoggerName()).append("\"");
         }
         if (record.getSourceMethodName() != null) {
-            json.add("method", record.getSourceMethodName());
+            json.append(",\"method\":\"").append(record.getSourceMethodName()).append("\"");
         }
         final var message = formatMessage ? formatMessage(record) : record.getMessage();
         if (message != null) {
-            json.add("message", message);
+            json.append(",\"message\":").append(JsonStrings.escape(message));
         }
         if (record.getThrown() != null) {
-            json.add("exception", toString(record.getThrown()));
+            json.append(",\"exception\":").append(JsonStrings.escape(toString(record.getThrown())));
         }
         if (record.getSourceClassName() != null) {
-            json.add("class", record.getSourceClassName());
+            json.append(",\"class\":\"").append(record.getSourceClassName()).append("\"");
         }
-        return json.build().toString() + '\n';
+        return json.append('}').toString() + '\n';
     }
 
     private String toString(final Throwable thrown) {
