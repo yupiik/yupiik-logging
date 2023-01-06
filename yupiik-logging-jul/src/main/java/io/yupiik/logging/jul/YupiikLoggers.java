@@ -293,6 +293,7 @@ public class YupiikLoggers {
         return getProperty(sub);
     }
 
+    @SuppressWarnings("unchecked")
     private Handler createHandler(final String handlerType) {
         final var handler = newHandler(handlerType);
 
@@ -321,6 +322,18 @@ public class YupiikLoggers {
                         final var jsonFormatter = new JsonFormatter();
                         jsonFormatter.setUseUUID(Boolean.parseBoolean(config.get("useUUID")));
                         jsonFormatter.setFormatMessage(Boolean.parseBoolean(config.get("formatMessage")));
+                        ofNullable(config.get("customEntriesMapper")).ifPresent(clazz -> {
+                            try {
+                                jsonFormatter.setCustomEntriesMapper(Thread.currentThread().getContextClassLoader()
+                                        .loadClass(clazz.trim())
+                                        .asSubclass(Function.class)
+                                        .getConstructor()
+                                        .newInstance());
+                            } catch (final InstantiationException | IllegalAccessException | InvocationTargetException |
+                                           NoSuchMethodException | ClassNotFoundException e) {
+                                throw new IllegalArgumentException(e);
+                            }
+                        });
                         handler.setFormatter(jsonFormatter);
                         break;
                     }

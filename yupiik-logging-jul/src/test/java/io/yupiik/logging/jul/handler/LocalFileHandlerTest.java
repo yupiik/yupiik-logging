@@ -175,7 +175,7 @@ class LocalFileHandlerTest {
             }
 
             @Override
-            public Clock withZone(ZoneId zone) {
+            public Clock withZone(final ZoneId zone) {
                 return null;
             }
 
@@ -216,18 +216,25 @@ class LocalFileHandlerTest {
                                                          final int fileIndex,
                                                          final List<String> previousResult) throws IOException {
         final var debug = "iteration #" + i;
+        final var previousDate = asDate(now.get());
+        now.set(now.get().plus(i, HOURS));
         final var currentDate = asDate(now.get());
         final var expected = Stream.concat(
-                        previousResult.stream().skip(Math.max(0, previousResult.size() - 2)).map(it -> it.endsWith(".gzip") ? it : (it + ".gzip")),
-                        Stream.of("app." + currentDate + ".00" + fileIndex + ".log"))
+                        previousResult.stream().skip(Math.max(0, previousResult.size() - 2))
+                                .map(it -> it.endsWith(".gzip") ? it : (it + ".gzip")),
+                        Stream.of("app." + currentDate + "." +
+                                (!previousResult.isEmpty() && previousDate.equals(currentDate) ?
+                                        String.format("%03d", Integer.parseInt(previousResult.get(previousResult.size() - 1).split("\\.")[2]) + 1) :
+                                        "000") +
+                                ".log"))
                 .collect(toList());
-        now.set(now.get().plus(i, HOURS));
         handler.publish(new LogRecord(Level.INFO, "data_" + i));
         try (final var list = Files.walk(logs).filter(Files::isRegularFile)) {
-            assertEquals(expected, list.map(Path::getFileName).map(Path::toString).sorted().collect(toList()), debug);
+            final var actual = list.map(Path::getFileName).map(Path::toString).sorted().collect(toList());
+            assertEquals(expected, actual, debug);
         }
         try {
-            sleep(30);
+            sleep(100);
         } catch (final InterruptedException e) {
             Thread.currentThread().interrupt();
             fail(e);

@@ -20,7 +20,9 @@ import java.io.StringWriter;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
+import java.util.Map;
 import java.util.UUID;
+import java.util.function.Function;
 import java.util.logging.Formatter;
 import java.util.logging.LogRecord;
 
@@ -29,6 +31,11 @@ public class JsonFormatter extends Formatter {
 
     private boolean useUUID;
     private boolean formatMessage = true;
+    private Function<LogRecord, Map<String, String>> customEntriesMapper = null;
+
+    public void setCustomEntriesMapper(final Function<LogRecord, Map<String, String>> customEntriesMapper) {
+        this.customEntriesMapper = customEntriesMapper;
+    }
 
     public void setFormatMessage(final boolean formatMessage) {
         this.formatMessage = formatMessage;
@@ -44,7 +51,7 @@ public class JsonFormatter extends Formatter {
         if (useUUID) {
             json.append("\"uuid\":\"").append(UUID.randomUUID()).append("\",");
         }
-        json.append("\"timestamp\":").append(JsonStrings.escape(OffsetDateTime.ofInstant(Instant.ofEpochMilli(record.getMillis()), UTC).toString()));
+        json.append("\"timestamp\":").append(escape(OffsetDateTime.ofInstant(Instant.ofEpochMilli(record.getMillis()), UTC).toString()));
         if (record.getLevel() != null) {
             json.append(",\"level\":\"").append(record.getLevel().getName()).append("\"");
         }
@@ -56,19 +63,29 @@ public class JsonFormatter extends Formatter {
         }
         final var message = formatMessage ? formatMessage(record) : record.getMessage();
         if (message != null) {
-            json.append(",\"message\":").append(JsonStrings.escape(message));
+            json.append(",\"message\":").append(escape(message));
         }
         if (record.getThrown() != null) {
-            json.append(",\"exception\":").append(JsonStrings.escape(toString(record.getThrown())));
+            json.append(",\"exception\":").append(escape(toString(record.getThrown())));
         }
         if (record.getSourceClassName() != null) {
             json.append(",\"class\":\"").append(record.getSourceClassName()).append("\"");
         }
+        if (customEntriesMapper != null) {
+            final var data = customEntriesMapper.apply(record);
+            if (data != null) {
+                data.forEach((k, v) -> json.append(",\"").append(k).append("\":").append(v).append(""));
+            }
+        }
         return json.append('}').toString() + '\n';
     }
 
-    private String toString(final Throwable thrown) {
-        final StringWriter w = new StringWriter();
+    protected String escape(final String value) {
+        return JsonStrings.escape(value);
+    }
+
+    protected String toString(final Throwable thrown) {
+        final var w = new StringWriter();
         try (final PrintWriter writer = new PrintWriter(w)) {
             thrown.printStackTrace(writer);
         }

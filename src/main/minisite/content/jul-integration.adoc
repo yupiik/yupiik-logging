@@ -108,8 +108,9 @@ It can be done with this list for example:
 </dependency>
 ----
 
-TIP: the JSON formatter can be configured passing `json(useUUID=[false|true],formatMessage=[true|false])` value instead of just `json`.
+TIP: the JSON formatter can be configured passing `json(useUUID=[false|true],formatMessage=[true|false],customEntriesMapper=<fqn of a Function<LogRecord, Map<String, String>>>)` value instead of just `json`. All configuration being optional.
 `formatMessage` enables to skip the message formatting when your application does not rely on it - faster and uses less the CPU, `useUUID` enables to force an unique ID in the record.
+`customEntriesMapper` enables to pass a function taking the log record and converting it to a map of data to append to the json object (must be `String` key/values).
 
 == Sample Configuration Files
 
