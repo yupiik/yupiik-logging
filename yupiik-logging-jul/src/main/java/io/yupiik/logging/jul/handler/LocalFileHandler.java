@@ -471,7 +471,7 @@ public class LocalFileHandler extends Handler {
                 }
 
                 final String propName = str.substring(start + 2, end);
-                String replacement = !propName.isEmpty() ? System.getProperty(propName) : null;
+                String replacement = !propName.isEmpty() ? readValue(propName) : null;
                 if (replacement == null) {
                     replacement = System.getenv(propName);
                 }
@@ -486,6 +486,13 @@ public class LocalFileHandler extends Handler {
             result = builder.toString();
         }
         return result;
+    }
+
+    private static String readValue(final String propName) {
+        if (propName.startsWith("env.")) {
+            return System.getenv(propName.substring("env.".length()));
+        }
+        return System.getProperty(propName);
     }
 
     private final class CountingStream extends OutputStream {

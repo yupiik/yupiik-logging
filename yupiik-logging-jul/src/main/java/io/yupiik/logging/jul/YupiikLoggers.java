@@ -47,6 +47,7 @@ import java.util.logging.Formatter;
 import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 import static java.util.Collections.enumeration;
@@ -59,6 +60,8 @@ import static java.util.stream.Collectors.toMap;
 //
 // note: it is not a 100% complete impl yet, it mainly targets docker containers for now and some features as config listeners are ignored
 public class YupiikLoggers {
+    private final Pattern posix = Pattern.compile("[^A-Za-z0-9]");
+
     public static class State { // makes it easy to reset at once
         private final ConcurrentMap<Runnable, Runnable> listeners = new ConcurrentHashMap<>();
         private final ConcurrentMap<String, YupiikLogger> loggers = new ConcurrentHashMap<>();
@@ -106,7 +109,9 @@ public class YupiikLoggers {
     }
 
     public String getProperty(final String name) {
-        return System.getProperty(name, state.configuration.get(name));
+        return ofNullable(System.getProperty(name))
+                .or(() -> ofNullable(System.getenv(posix.matcher(name).replaceAll("_").toUpperCase(ROOT))))
+                .orElseGet(() -> state.configuration.get(name));
     }
 
     public Enumeration<String> getLoggerNames() {

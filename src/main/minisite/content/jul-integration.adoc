@@ -150,3 +150,5 @@ And finally a configuration using file output instead of standard one:
 .handlers = file
 file.formatter = inline
 ----
+
+TIP: you can set all properties as system properties and also environment variables (in uppercase and dots replaced by underscores).

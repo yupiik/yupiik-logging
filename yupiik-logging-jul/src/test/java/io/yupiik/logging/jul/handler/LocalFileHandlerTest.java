@@ -272,6 +272,6 @@ class LocalFileHandlerTest {
     }
 
     private static LocalDate asDate(final Instant instant) {
-        return instant.atZone(ZoneId.systemDefault()).toLocalDate();
+        return instant.atZone(ZoneId.of("UTC")).toLocalDate();
     }
 }
