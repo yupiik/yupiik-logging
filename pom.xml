@@ -212,10 +212,15 @@
             </goals>
           </execution>
         </executions>
-        <inherited>false</inherited>
+        <inherited>true</inherited>
         <configuration>
           <aggregate>true</aggregate>
-          <inlineHeader><![CDATA[Copyright (c) ${project.inceptionYear} - ${project.organization.name} - ${project.organization.url}
+          <mapping>
+            <adoc>DOUBLESLASH_STYLE</adoc>
+          </mapping>
+          <licenseSets>
+            <licenseSet>
+              <inlineHeader><![CDATA[Copyright (c) ${project.inceptionYear} - ${project.organization.name} - ${project.organization.url}
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance
 with the License.  You may obtain a copy of the License at
@@ -229,24 +234,25 @@ KIND, either express or implied.  See the License for the
 specific language governing permissions and limitations
 under the License.
 ]]></inlineHeader>
-          <mapping>
-            <adoc>DOUBLESLASH_STYLE</adoc>
-          </mapping>
-          <excludes>
-            <exclude>**/*.txt</exclude>
-            <exclude>**/*.xlsx</exclude>
-            <exclude>**/*.idea</exclude>
-            <exclude>LICENSE</exclude>
-            <exclude>**/target/**</exclude>
-            <exclude>**/src/license/**</exclude>
-            <exclude>**/generated/**</exclude>
-            <exclude>**/*.gitkeep</exclude>
-            <exclude>**/*.html</exclude>
-            <exclude>**/*.slim</exclude>
-            <exclude>**/*.xslt</exclude>
-            <exclude>**/minisite/**</exclude>
-            <exclude>**/.m2/**</exclude>
-          </excludes>
+              <useDefaultExcludes>true</useDefaultExcludes>
+              <includes>
+                <include>**/*.properties</include>
+                <include>**/*.java</include>
+                <include>**/*.xml</include>
+                <include>**/*.yaml</include>
+              </includes>
+              <excludes>
+                <exclude>LICENSE</exclude>
+                <exclude>**/*.adoc</exclude>
+                <exclude>**/*.idea</exclude>
+                <exclude>**/target/**</exclude>
+                <exclude>**/generated/**</exclude>
+                <exclude>**/minisite/**</exclude>
+                <exclude>**/file</exclude>
+                <exclude>**/.m2/**</exclude>
+              </excludes>
+            </licenseSet>
+          </licenseSets>
         </configuration>
       </plugin>
     </plugins>
