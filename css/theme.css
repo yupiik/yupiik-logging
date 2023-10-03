@@ -71,6 +71,21 @@ code {
 .theme-icon-holder .svg-inline---fa {
     color: #007bff
 }
+span.theme-icon-holder > i.fa,
+span.theme-icon-holder > i.fab,
+span.theme-icon-holder > i.fas {
+    padding-top: 0.4rem;
+}
+
+/*asciidoctor vs fontawesome 5 compat*/
+.fa.fab {
+    font-family: "Font Awesome 5 Free" !important;
+}
+.fa.fa-fab {
+    font-weight: 400;
+    font-family: "Font Awesome 5 Brands";
+}
+
 
 .border-radius-0 {
     border-radius: 0
@@ -165,7 +180,11 @@ code {
 .card-title-text {
     display: inline-block;
     position: relative;
-    top: -0.3rem
+}
+.card-subtitle-text {
+    font-weight: 400;
+    font-style: italic;
+    font-size: medium;
 }
 
 .card-link-mask {
@@ -252,6 +271,12 @@ code {
         display: none;
     }
 }
+.blog .page-navigation-right {
+    display: none;
+}
+.blog .page-content {
+    border-right: none;
+}
 
 div.colist.arabic > ol {
     list-style: none;
@@ -287,6 +312,11 @@ div.colist.arabic > ol > li > p {
     display: inline;
 }
 
+#preamble>.sectionbody>.paragraph:first-of-type p,
+.paragraph.lead>p {
+    color: unset;
+}
+
 #searchModal .modal-dialog {
     margin: auto;
     min-width: 80%;
@@ -315,4 +345,60 @@ div.colist.arabic > ol > li > p {
     max-height: 64px;
     -webkit-line-clamp: 4;
     -webkit-box-orient: vertical;
+}
+
+.blog-links ul {
+    list-style-type: none;
+    display: flex;
+    margin: auto;
+    width: 50%;
+}
+.blog-links ul > li {
+    flex: 1;
+    text-align: center;
+}
+.blog-link-all::before, .blog-link-previous::before, .blog-link-next::before {
+    display: inline-block;
+    font-style: normal;
+    font-variant: normal;
+    text-rendering: auto;
+    font-family: "Font Awesome 5 Free";
+    font-weight: 900;
+    padding-right: 0.5rem;
+}
+.blog-link-all::before {
+    content: "\f03a";
+}
+.blog-link-previous::before {
+    content: "\f104";
+}
+.blog-link-next::before {
+    content: "\f105";
+}
+.blog-categories > p {
+    text-align: center;
+    margin-bottom: 0;
+    font-style: italic;
+}
+
+.ulist.blog-links-page {
+    padding-top: 1rem;
+}
+
+.page-content-body .metadata {
+    font-size: smaller;
+    font-style: italic;
+}
+
+.has-previous-link-false,
+.has-next-link-false {
+    visibility: hidden;
+}
+.blog-links {
+    visibility: hidden;
+    max-width: 0;
+}
+.is-blog .blog-links {
+    visibility: inherit !important;
+    max-width: inherit;
 }
