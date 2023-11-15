@@ -98,7 +98,7 @@ public class AsyncHandler extends Handler {
 
         queueSize = ofNullable(logManager.apply(className + ".queue.size"))
                 .map(Integer::parseInt)
-                .orElse(512);
+                .orElse(1024);
         this.queue = new ArrayBlockingQueue<>(queueSize);
 
         final var workerCount = ofNullable(logManager.apply(className + ".worker.count"))
@@ -140,7 +140,9 @@ public class AsyncHandler extends Handler {
             // infer in context if needed
             record.getSourceClassName();
             record.getSourceMethodName();
-            queue.add(record);
+            if (!queue.offer(record)) {
+                delegate.publish(record);
+            }
         }
     }
 
