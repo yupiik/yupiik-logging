@@ -61,40 +61,6 @@ public class AsyncHandler extends Handler {
                 throw new IllegalStateException(e);
             }
         }
-        delegate.setErrorManager(ofNullable(getErrorManager()).orElseGet(ErrorManager::new));
-
-        final var lvl = logManager.apply(className + ".level");
-        if (lvl != null) {
-            delegate.setLevel(Level.parse(lvl));
-        }
-
-        final var filter = logManager.apply(className + ".filter");
-        if (filter != null) {
-            try {
-                delegate.setFilter(AsyncHandler.class.getClassLoader().loadClass(filter).asSubclass(Filter.class).getConstructor().newInstance());
-            } catch (final Exception e) {
-                reportError(e.getMessage(), e, ErrorManager.FORMAT_FAILURE);
-            }
-        }
-
-        final var formatter = logManager.apply(className + ".formatter");
-        if (formatter != null) {
-            try {
-                delegate.setFormatter(AsyncHandler.class.getClassLoader().loadClass(formatter).asSubclass(Formatter.class).getConstructor().newInstance());
-            } catch (final Exception e) {
-                reportError(e.getMessage(), e, ErrorManager.FORMAT_FAILURE);
-            }
-        }
-        final var encoding = logManager.apply(className + ".encoding");
-        try {
-            if (encoding != null) {
-                delegate.setEncoding(encoding);
-            } else {
-                delegate.setEncoding(getEncoding());
-            }
-        } catch (final Exception e) {
-            reportError(e.getMessage(), e, ErrorManager.FORMAT_FAILURE);
-        }
 
         queueSize = ofNullable(logManager.apply(className + ".queue.size"))
                 .map(Integer::parseInt)

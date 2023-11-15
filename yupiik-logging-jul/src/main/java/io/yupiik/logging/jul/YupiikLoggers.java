@@ -155,7 +155,7 @@ public class YupiikLoggers {
         }
         readConfiguration(new ByteArrayInputStream(("" +
                 ".level=INFO\n" +
-                ".handlers=io.yupiik.logging.jul.handler.StandardHandler\n" +
+                ".handlers=io.yupiik.logging.jul.handler.AsyncHandler\n" +
                 "").getBytes(StandardCharsets.UTF_8)));
     }
 
@@ -368,6 +368,20 @@ public class YupiikLoggers {
                 } catch (final UnsupportedEncodingException unsupportedEncodingException) {
                     // no-op
                 }
+            }
+        }
+
+        final var filter = getProperty(handlerType + ".filter");
+        if (filter != null) {
+            try {
+                handler.setFilter(Thread.currentThread().getContextClassLoader()
+                        .loadClass(filter.trim())
+                        .asSubclass(Filter.class)
+                        .getConstructor()
+                        .newInstance());
+            } catch (final InstantiationException | IllegalAccessException | InvocationTargetException |
+                           NoSuchMethodException | ClassNotFoundException e) {
+                throw new IllegalArgumentException(e);
             }
         }
 
