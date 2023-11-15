@@ -18,6 +18,7 @@ package io.yupiik.logging.jul;
 import io.yupiik.logging.jul.formatter.InlineFormatter;
 import io.yupiik.logging.jul.formatter.JsonFormatter;
 import io.yupiik.logging.jul.formatter.PatternFormatter;
+import io.yupiik.logging.jul.handler.AsyncHandler;
 import io.yupiik.logging.jul.handler.LocalFileHandler;
 import io.yupiik.logging.jul.handler.StandardHandler;
 import io.yupiik.logging.jul.handler.StdoutHandler;
@@ -380,6 +381,9 @@ public class YupiikLoggers {
 
     private Handler newHandler(String it) {
         switch (it) {
+            case "async":
+            case "io.yupiik.logging.jul.handler.AsyncHandler":
+                return new AsyncHandler();
             case "std":
             case "standard":
             case "io.yupiik.logging.jul.handler.StandardHandler":
