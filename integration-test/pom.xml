@@ -39,21 +39,9 @@
       <version>${project.version}</version>
     </dependency>
     <dependency>
-      <groupId>org.testcontainers</groupId>
-      <artifactId>testcontainers</artifactId>
-      <version>1.18.0</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-jdk14</artifactId>
       <version>1.7.30</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency> <!-- ensure it is resolved -->
-      <groupId>org.apache.geronimo.arthur</groupId>
-      <artifactId>arthur-maven-plugin</artifactId>
-      <version>1.0.6</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
@@ -63,7 +51,6 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
-        <version>3.0.0-M5</version>
         <configuration>
           <skip>${skip.it}</skip>
           <systemPropertyVariables>
@@ -71,6 +58,8 @@
             <project.version>${project.version}</project.version>
             <maven.test.repository>${settings.localRepository}</maven.test.repository>
             <maven.test.projects>${project.basedir}/projects</maven.test.projects>
+            <maven.home>${maven.home}</maven.home>
+            <java.home>${java.home}</java.home>
           </systemPropertyVariables>
         </configuration>
       </plugin>

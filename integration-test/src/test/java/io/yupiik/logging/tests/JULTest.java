@@ -15,38 +15,37 @@
  */
 package io.yupiik.logging.tests;
 
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.testcontainers.containers.Container;
-import org.testcontainers.containers.GenericContainer;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.io.TempDir;
 
 import java.io.IOException;
+import java.nio.file.FileVisitResult;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.util.List;
+import java.util.Objects;
+import java.util.stream.Stream;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.Locale.ROOT;
+import static java.util.Optional.ofNullable;
+import static java.util.stream.Collectors.toList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.TestInstance.Lifecycle.PER_CLASS;
 
+@TestInstance(PER_CLASS)
 class JULTest {
-    private static GenericContainer<?> container;
-
-    @BeforeAll
-    static void start() {
-        container = new GenericContainer<>("quay.io/quarkus/centos-quarkus-maven:22.1.0-java11");
-        container.setWorkingDirectory("/opt/projects");
-        container.withFileSystemBind(System.getProperty("maven.test.repository"), "/home/quarkus/.m2/repository");
-        container.withFileSystemBind(System.getProperty("maven.test.projects", "projects"), "/opt/projects");
-        container.setCommand("sleep", "infinity");
-        container.start();
-    }
-
-    @AfterAll
-    static void stop() {
-        container.stop();
-    }
+    private final String maven = findMaven();
 
     @Test
-    void jul() throws IOException, InterruptedException {
-        final var firstOutput = buildProject("jul", "-DignoreJulConfigForThisTest");
+    void jul(@TempDir final Path work) throws IOException {
+        final var firstRun = buildAndRun(work, "jul", List.of("clean", "package", "-e"), "-DuseDefaultJulConfigForThisTest");
+        final var firstOutput = assertExitCode(firstRun);
         // default setup, ie inline formatter at info level
         final var defaultOutput = firstOutput
                 // no, we didn't log an EOL but due to testcontainers bug and out #testContainerStdWorkaround we get one
@@ -56,21 +55,18 @@ class JULTest {
         //
         // already built so execute it another time with different config
         //
-        final String projectBase = "/tmp/jul/";
+        final var base = work.resolve("project");
+        final var bin = base.resolve("target/jul.graal.bin").toString();
 
         // change level to FINEST for test logger
-        final var finestOutput = ensureSuccessAndGetStdout(container.execInContainer(
-                projectBase + "target/jul.graal.bin",
-                "-Djava.util.logging.config.file=" + projectBase + "logging.properties",
-                getVersion()))
-                .trim();
+        final var finestOutput = assertExitCode(exec(
+                new ProcessBuilder(bin, "-Djava.util.logging.config.file=" + base.resolve("logging.properties")), base))
+                .strip();
 
         // use json formatting
-        final var jsonOutput = ensureSuccessAndGetStdout(container.execInContainer(
-                projectBase + "target/jul.graal.bin",
-                "-Djava.util.logging.config.file=" + projectBase + "logging.json.properties",
-                getVersion()))
-                .trim();
+        final var jsonOutput = assertExitCode(exec(
+                new ProcessBuilder(bin, "-Djava.util.logging.config.file=" + base.resolve("logging.json.properties")), base))
+                .strip();
 
         // since it is a bit long to native-image the main we run all tests then assert to be able to debug more easily
         // all cases at once
@@ -84,46 +80,94 @@ class JULTest {
             System.out.println("--");
         }
 
-        final String dateRegex = "[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.?[0-9]+)?Z ";
+        final var dateRegex = "[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.?[0-9]+)?Z ";
         assertTrue(defaultOutput.matches(
-                dateRegex + "\\[INFO]\\[test\\.Main] info entry point of the test"),
+                        dateRegex + "\\[INFO]\\[test\\.Main] info entry point of the test"),
                 defaultOutput);
         assertTrue(finestOutput.matches("" +
-                dateRegex + "\\[FINEST]\\[test\\.Main] severe entry point of the test" + /*\n was replaced by our std workaround */
-                dateRegex + "\n\\[INFO]\\[test\\.Main] info entry point of the test"), finestOutput);
+                dateRegex + "\\[FINEST]\\[test\\.Main] severe entry point of the test\n" +
+                dateRegex + "\\[INFO]\\[test\\.Main] info entry point of the test"), finestOutput);
         assertTrue(jsonOutput.matches("" +
                 "\\{\"timestamp\":\"" + dateRegex.trim() + "\",\"level\":\"INFO\",\"logger\":\"test\\.Main\"," +
                 "\"method\":\"log\",\"message\":\"info entry point of the test\"," +
                 "\"class\":\"io\\.yupiik\\.logging\\.jul\\.logger\\.YupiikLogger\"}"), jsonOutput);
     }
 
-    private String buildProject(final String name, final String runtimeSystemProp) throws IOException, InterruptedException {
-        final var result = container.execInContainer(
-                "sh", "./execute.sh", name, runtimeSystemProp, getVersion());
-        return ensureSuccessAndGetStdout(result);
-    }
-
     private String getVersion() {
-        return System.getProperty("project.version", "1.0-SNAPSHOT");
+        return System.getProperty("project.version", "1.0.8-SNAPSHOT");
     }
 
-    private String ensureSuccessAndGetStdout(final Container.ExecResult result) {
-        assertEquals(0, result.getExitCode(), () -> "" +
-                "status=" + result.getExitCode() + "\n" +
-                "stdout=\n" + testContainerStdWorkaround(result.getStdout()) + "\n" +
-                "stderr=\n" + testContainerStdWorkaround(result.getStderr()));
-        return testContainerStdWorkaround(result.getStdout());
+    private String assertExitCode(final Process result) throws IOException {
+        assertEquals(0, result.exitValue(), () -> {
+            try {
+                return "" +
+                        "status=" + result.exitValue() + "\n" +
+                        "stdout=\n" + new String(result.getInputStream().readAllBytes(), UTF_8) + "\n" +
+                        "stderr=\n" + new String(result.getErrorStream().readAllBytes(), UTF_8);
+            } catch (final IOException e) {
+                return "status=" + result.exitValue();
+            }
+        });
+        return new String(result.getInputStream().readAllBytes(), UTF_8);
     }
 
-    // bug of testcontainers with maven logger output
-    private String testContainerStdWorkaround(final String result) {
-        return result
-                .replace("\n", "")
-                // try to make it more readable with previous hack
-                .replace("Downloading from ", "\nDownloading from ")
-                .replace("Downloaded from ", "\nDownloaded from ")
-                .replace("[INFO]", "\n[INFO]")
-                .replace("[ERROR]", "\n[ERROR]")
-                .replace("\tat ", "\n\tat "); // exceptions
+    private String findMaven() {
+        return ofNullable(System.getProperty("maven.home"))
+                .flatMap(h -> {
+                    final var bin = "mvn" +
+                            (System.getProperty("os.name", "").toLowerCase(ROOT).contains("win") ?
+                                    ".cmd" : "");
+                    try (final var list = Files.list(Path.of(h).resolve("bin"))) {
+                        return list.filter(it -> Objects.equals(it.getFileName().toString(), bin)).findFirst();
+                    } catch (final IOException e) {
+                        throw new IllegalStateException(e);
+                    }
+                })
+                .map(Path::toString)
+                .orElse("mvn");
+    }
+
+    private Process buildAndRun(final Path work, final String project, final List<String> args, final String binOpt) throws IOException {
+        final var target = Files.createDirectories(work.resolve("project"));
+        final var from = Path.of(System.getProperty("maven.test.projects", "projects")).resolve(project);
+        Files.walkFileTree(from, new SimpleFileVisitor<>() {
+            @Override
+            public FileVisitResult visitFile(final Path file, final BasicFileAttributes attrs) throws IOException {
+                final var to = target.resolve(from.relativize(file));
+                Files.createDirectories(to.getParent());
+                if (!"pom.xml".equals(file.getFileName().toString())) {
+                    Files.copy(file, to);
+                } else {
+                    Files.writeString(to, Files.readString(file)
+                            .replace("<version>project.version</version>", "<version>" + getVersion() + "</version>"));
+                }
+                return super.visitFile(file, attrs);
+            }
+        });
+
+        final var mvnProcessBuilder = new ProcessBuilder(Stream.concat(Stream.of(maven), args.stream()).collect(toList()));
+        mvnProcessBuilder.inheritIO();
+
+        final var environment = mvnProcessBuilder.environment();
+        environment.put("MAVEN_HOME", System.getProperty("maven.home", ""));
+        environment.put("JAVA_HOME", System.getProperty("java.home", ""));
+
+        final var mvnResult = exec(mvnProcessBuilder, target);
+        assertExitCode(mvnResult);
+
+        return exec(new ProcessBuilder("target/" + project + ".graal.bin", binOpt), target);
+    }
+
+    private Process exec(final ProcessBuilder builder, final Path target) throws IOException {
+        builder.directory(target.toFile());
+
+        try {
+            final var start = builder.start();
+            start.waitFor();
+            return start;
+        } catch (final InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return fail(e);
+        }
     }
 }
