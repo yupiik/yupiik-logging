@@ -153,9 +153,12 @@ public class YupiikLoggers {
                 return;
             }
         }
+
+        final var level = getProperty(".level");
+        final var handlers = getProperty(".handlers");
         readConfiguration(new ByteArrayInputStream(("" +
-                ".level=INFO\n" +
-                ".handlers=io.yupiik.logging.jul.handler.AsyncHandler\n" +
+                ".level=" + (level == null || level.isBlank() ? "INFO" : level) + "\n" +
+                ".handlers=" + (handlers == null || handlers.isBlank() ? "io.yupiik.logging.jul.handler.AsyncHandler" : handlers) + "\n" +
                 "").getBytes(StandardCharsets.UTF_8)));
     }
 
