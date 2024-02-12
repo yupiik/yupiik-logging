@@ -139,7 +139,11 @@ public class YupiikLoggers {
                     }
                 }), getClass().getName() + "-shutdown");
         state.shutdownHook = hook;
-        Runtime.getRuntime().addShutdownHook(hook);
+        try {
+            Runtime.getRuntime().addShutdownHook(hook);
+        } catch (final RuntimeException re) {
+            // no-op, shutting down
+        }
         final var location = getProperty("java.util.logging.config.file");
         if (location != null) {
             final var path = Paths.get(location);
