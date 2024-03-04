@@ -74,7 +74,7 @@ public class JsonFormatter extends Formatter {
         if (customEntriesMapper != null) {
             final var data = customEntriesMapper.apply(record);
             if (data != null) {
-                data.forEach((k, v) -> json.append(",\"").append(k).append("\":").append(v).append(""));
+                data.forEach((k, v) -> json.append(",\"").append(k).append("\":").append(v));
             }
         }
         return json.append('}').toString() + '\n';
