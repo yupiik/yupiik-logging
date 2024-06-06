@@ -46,7 +46,7 @@
     <dependency>
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter</artifactId>
-      <version>5.9.2</version>
+      <version>5.10.2</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
@@ -322,6 +322,13 @@ under the License.
     <url>https://github.com/yupiik/yupiik-logging.git</url>
     <tag>yupiik-logging-1.0.7</tag>
   </scm>
+  <repositories>
+    <repository>
+      <id>maven_central</id>
+      <name>Maven Central</name>
+      <url>https://repo.maven.apache.org/maven2/</url>
+    </repository>
+  </repositories>
 
   <distributionManagement>
     <snapshotRepository>
