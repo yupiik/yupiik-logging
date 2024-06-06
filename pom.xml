@@ -188,6 +188,7 @@
               <goal>minisite</goal>
             </goals>
             <configuration>
+              <preferYupiikAsciidoc>true</preferYupiikAsciidoc>
               <siteBase>//www.yupiik.io/yupiik-logging</siteBase>
 
               <title>Yupiik Logging documentation</title>
@@ -212,6 +213,13 @@
             </configuration>
           </execution>
         </executions>
+        <dependencies>
+          <dependency>
+            <groupId>io.yupiik.maven</groupId>
+            <artifactId>asciidoc-java</artifactId>
+            <version>1.2.3</version>
+          </dependency>
+        </dependencies>
       </plugin>
       <plugin>
         <groupId>com.mycila</groupId>
