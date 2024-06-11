@@ -15,51 +15,70 @@
  */
 package io.yupiik.logging.jul.formatter;
 
+// inspired from tomcat JSONFilter but enforcing quoting of values (can need revisit but got proven fast enough)
 final class JsonStrings {
     private JsonStrings() {
         // no-op
     }
 
-    static String escape(final String value) {
-        final var sb = new StringBuilder(value.length());
+    static StringBuilder escape(final String value) {
+        final var sb = new StringBuilder(value.length() + 20);
         sb.append('"');
+
+        StringBuilder escaped = null;
+        int lastUnescapedStart = 0;
         for (int i = 0; i < value.length(); i++) {
             final char c = value.charAt(i);
-            if (isPassthrough(c)) {
-                sb.append(c);
-                continue;
+            if (c < 0x20 || c == 0x22 || c == 0x5c || Character.isHighSurrogate(c) || Character.isLowSurrogate(c)) {
+                if (escaped == null) {
+                    escaped = new StringBuilder(value.length() + 20);
+                }
+                if (lastUnescapedStart < i) {
+                    escaped.append(value.subSequence(lastUnescapedStart, i));
+                }
+                lastUnescapedStart = i + 1;
+                final char popular = getPopularChar(c);
+                if (popular > 0) {
+                    escaped.append('\\').append(popular);
+                } else {
+                    escaped.append("\\u");
+
+                    final var hex = "000" + Integer.toHexString(c);
+                    escaped.append(hex.substring(hex.length() - 4));
+                }
             }
-            sb.append(escape(c));
         }
+        if (escaped == null) {
+            sb.append(value);
+        } else {
+            if (lastUnescapedStart < value.length()) {
+                escaped.append(value.subSequence(lastUnescapedStart, value.length()));
+            }
+            sb.append(escaped);
+        }
+
         sb.append('"');
-        return sb.toString();
+        return sb;
     }
 
-    public static String escape(final char c) {
-        if (isPassthrough(c)) {
-            return String.valueOf(c);
-        }
+    private static char getPopularChar(char c) {
         switch (c) {
             case '"':
             case '\\':
-                return "\\" + c;
-            case '\b':
-                return "\\b";
-            case '\f':
-                return "\\f";
-            case '\n':
-                return "\\n";
-            case '\r':
-                return "\\r";
-            case '\t':
-                return "\\t";
+            case '/':
+                return c;
+            case 0x8:
+                return 'b';
+            case 0xc:
+                return 'f';
+            case 0xa:
+                return 'n';
+            case 0xd:
+                return 'r';
+            case 0x9:
+                return 't';
             default:
-                final var hex = "000" + Integer.toHexString(c);
-                return "\\u" + hex.substring(hex.length() - 4);
+                return 0;
         }
-    }
-
-    private static boolean isPassthrough(final char c) {
-        return c >= 0x20 && c != 0x22 && c != 0x5c;
     }
 }

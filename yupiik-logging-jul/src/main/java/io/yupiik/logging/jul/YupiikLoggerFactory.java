@@ -23,14 +23,14 @@ public final class YupiikLoggerFactory {
     }
 
     public static YupiikLoggers get() {
-        if (delegate == null) {
+        if (unsafeGet() == null) {
             synchronized (YupiikLoggers.class) {
-                if (delegate == null) {
+                if (unsafeGet() == null) {
                     delegate = new YupiikLoggers();
                 }
             }
         }
-        return delegate;
+        return unsafeGet();
     }
 
     // must be called only in a safe env
@@ -38,6 +38,16 @@ public final class YupiikLoggerFactory {
         if (delegate != null) {
             delegate.close();
         }
+        unsafeSet(loggers);
+    }
+
+    // @Internal
+    public static YupiikLoggers unsafeGet() {
+        return delegate;
+    }
+
+    // @Internal
+    public static void unsafeSet(final YupiikLoggers loggers) {
         delegate = loggers;
     }
 }

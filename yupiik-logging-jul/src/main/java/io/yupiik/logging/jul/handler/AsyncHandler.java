@@ -15,6 +15,9 @@
  */
 package io.yupiik.logging.jul.handler;
 
+import io.yupiik.logging.jul.YupiikLoggerFactory;
+import io.yupiik.logging.jul.api.RecordFreezer;
+
 import java.io.UnsupportedEncodingException;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
@@ -38,10 +41,16 @@ import static java.util.concurrent.TimeUnit.MINUTES;
 // so we format in the caller thread to distribute the load and only append in a single thread
 public class AsyncHandler extends Handler {
     private final Handler delegate;
+
     private final BlockingQueue<LogRecord> queue;
     private final Worker[] workers;
     private final Integer queueSize;
     private final AtomicBoolean running = new AtomicBoolean(true);
+
+    private int needsContext = 0; // bit field, 1 == handler, 2 == formatter
+
+    private RecordFreezer delegateRecordFreezer;
+    private RecordFreezer formatterRecordFreezer;
 
     public AsyncHandler() {
         final var className = AsyncHandler.class.getName();
@@ -52,14 +61,28 @@ public class AsyncHandler extends Handler {
             delegate = new StandardHandler();
         } else {
             try {
-                delegate = AsyncHandler.class.getClassLoader().loadClass(delegateClass)
-                        .asSubclass(Handler.class)
-                        .getConstructor()
-                        .newInstance();
+                final var yupiikLoggers = YupiikLoggerFactory.get();
+                if (yupiikLoggers != null) {
+                    delegate = yupiikLoggers.createHandler(delegateClass);
+                } else {
+                    delegate = AsyncHandler.class.getClassLoader().loadClass(delegateClass)
+                            .asSubclass(Handler.class)
+                            .getConstructor()
+                            .newInstance();
+                }
             } catch (final Exception e) {
                 reportError(e.getMessage(), e, ErrorManager.FORMAT_FAILURE);
                 throw new IllegalStateException(e);
             }
+        }
+
+        if (delegate instanceof RecordFreezer) {
+            needsContext |= 1;
+            delegateRecordFreezer = (RecordFreezer) delegate;
+        }
+
+        if (delegate.getFormatter() != null) {
+            initFormatterContext(delegate.getFormatter());
         }
 
         queueSize = ofNullable(logManager.apply(className + ".queue.size"))
@@ -78,6 +101,7 @@ public class AsyncHandler extends Handler {
     @Override
     public void setFormatter(final Formatter newFormatter) throws SecurityException {
         delegate.setFormatter(newFormatter);
+        initFormatterContext(newFormatter);
     }
 
     @Override
@@ -106,7 +130,16 @@ public class AsyncHandler extends Handler {
             // infer in context if needed
             record.getSourceClassName();
             record.getSourceMethodName();
-            if (!queue.offer(record)) {
+
+            var publishedRecord = record;
+            if ((needsContext & 1) != 0) {
+                publishedRecord = delegateRecordFreezer.apply(publishedRecord);
+            }
+            if ((needsContext & 2) != 0) {
+                publishedRecord = formatterRecordFreezer.apply(publishedRecord);
+            }
+
+            if (!queue.offer(publishedRecord)) {
                 delegate.publish(record);
             }
         }
@@ -129,6 +162,16 @@ public class AsyncHandler extends Handler {
         });
         doFlush(Integer.MAX_VALUE);
         delegate.close();
+    }
+
+    private void initFormatterContext(final Formatter newFormatter) {
+        if (newFormatter instanceof RecordFreezer) {
+            needsContext |= 2;
+            formatterRecordFreezer = (RecordFreezer) newFormatter;
+        } else {
+            needsContext &= ~2;
+            formatterRecordFreezer = null;
+        }
     }
 
     private void doFlush(final int max) {

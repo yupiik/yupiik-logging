@@ -307,9 +307,14 @@ public class YupiikLoggers {
     }
 
     @SuppressWarnings("unchecked")
-    private Handler createHandler(final String handlerType) {
+    public Handler createHandler(final String handlerType) {
         final var handler = newHandler(handlerType);
+        initHandler(handlerType, handler);
+        return handler;
+    }
 
+    @SuppressWarnings("unchecked")
+    public void initHandler(final String handlerType, final Handler handler) {
         final var formatter = getProperty(handlerType + ".formatter");
         if (formatter != null) {
             switch (formatter.trim().toLowerCase(ROOT)) {
@@ -337,7 +342,8 @@ public class YupiikLoggers {
                         jsonFormatter.setFormatMessage(Boolean.parseBoolean(config.get("formatMessage")));
                         ofNullable(config.get("customEntriesMapper")).ifPresent(clazz -> {
                             try {
-                                jsonFormatter.setCustomEntriesMapper(Thread.currentThread().getContextClassLoader()
+                                jsonFormatter.setCustomEntriesMapper(ofNullable(Thread.currentThread().getContextClassLoader())
+                                        .orElseGet(YupiikLoggers.class::getClassLoader)
                                         .loadClass(clazz.trim())
                                         .asSubclass(Function.class)
                                         .getConstructor()
@@ -396,11 +402,9 @@ public class YupiikLoggers {
         if (level != null) {
             handler.setLevel(Level.parse(level));
         }
-
-        return handler;
     }
 
-    private Handler newHandler(String it) {
+    private Handler newHandler(final String it) {
         switch (it) {
             case "async":
             case "io.yupiik.logging.jul.handler.AsyncHandler":

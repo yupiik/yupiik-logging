@@ -29,27 +29,29 @@ import static java.time.temporal.ChronoField.NANO_OF_SECOND;
 import static java.time.temporal.ChronoField.SECOND_OF_MINUTE;
 
 public class InlineFormatter extends Formatter {
-    // ensure it uses a constant width pattern
-    private final DateTimeFormatter formatter = new DateTimeFormatterBuilder()
-            .parseCaseInsensitive()
-            .append(DateTimeFormatter.ISO_LOCAL_DATE)
-            .appendLiteral('T')
-            .appendValue(HOUR_OF_DAY, 2)
-            .appendLiteral(':')
-            .appendValue(MINUTE_OF_HOUR, 2)
-            .optionalStart()
-            .appendLiteral(':')
-            .appendValue(SECOND_OF_MINUTE, 2)
-            .optionalStart()
-            .appendFraction(NANO_OF_SECOND, 3, 3, true)
-            .parseLenient()
-            .appendOffsetId()
-            .parseStrict()
-            .toFormatter();
+    private interface Format { // for graalvm
+        // ensure it uses a constant width pattern
+        DateTimeFormatter DATE_TIME_FORMATTER = new DateTimeFormatterBuilder()
+                .parseCaseInsensitive()
+                .append(DateTimeFormatter.ISO_LOCAL_DATE)
+                .appendLiteral('T')
+                .appendValue(HOUR_OF_DAY, 2)
+                .appendLiteral(':')
+                .appendValue(MINUTE_OF_HOUR, 2)
+                .optionalStart()
+                .appendLiteral(':')
+                .appendValue(SECOND_OF_MINUTE, 2)
+                .optionalStart()
+                .appendFraction(NANO_OF_SECOND, 3, 3, true)
+                .parseLenient()
+                .appendOffsetId()
+                .parseStrict()
+                .toFormatter();
+    }
 
     @Override
     public String format(final LogRecord record) {
-        return record.getInstant().atOffset(ZoneOffset.UTC).format(formatter) +
+        return record.getInstant().atOffset(ZoneOffset.UTC).format(Format.DATE_TIME_FORMATTER) +
                 " [" + record.getLevel().getName() + "][" + record.getLoggerName() + "] " +
                 formatMessage(record) + toString(record.getThrown()) + '\n';
     }

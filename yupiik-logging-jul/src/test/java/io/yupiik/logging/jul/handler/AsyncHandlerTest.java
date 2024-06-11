@@ -15,8 +15,10 @@
  */
 package io.yupiik.logging.jul.handler;
 
+import io.yupiik.logging.jul.YupiikLoggerFactory;
 import io.yupiik.logging.jul.YupiikLoggers;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
@@ -26,13 +28,23 @@ import java.util.function.Function;
 import java.util.logging.Handler;
 import java.util.logging.LogRecord;
 
+import static java.util.Optional.ofNullable;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class AsyncHandlerTest {
+    private YupiikLoggers oldLoggers;
+
+    @BeforeEach
+    void init() {
+        oldLoggers = YupiikLoggerFactory.unsafeGet();
+    }
+
     @AfterEach
     void after() {
         SimpleHandler.RECORDS.clear();
+        SimpleFormattedHandler.RECORDS.clear();
         AsyncTestHandler.conf = null;
+        YupiikLoggerFactory.unsafeSet(oldLoggers);
     }
 
     @Test
@@ -48,6 +60,7 @@ class AsyncHandlerTest {
                 return conf.get(name);
             }
         };
+        YupiikLoggerFactory.unsafeSet(loggers);
         final var logger = loggers.getLogger("foo", null);
         logger.info("test");
         // flush
@@ -59,6 +72,48 @@ class AsyncHandlerTest {
         assertEquals("test", records.get(0).getMessage());
     }
 
+    @Test
+    void asyncContext() {
+        final var conf = Map.of(
+                ".handlers", AsyncTestHandler.class.getName(),
+                AsyncHandler.class.getName() + ".delegate.class", SimpleFormattedHandler.class.getName(),
+                AsyncTestHandler.class.getName() + ".formatter", "json(customEntriesMapper=" + ContextEnricher.class.getName() + ")"
+        );
+        AsyncTestHandler.conf = conf;
+        final var loggers = new YupiikLoggers() {
+            @Override
+            public String getProperty(final String name) {
+                return conf.get(name);
+            }
+        };
+        YupiikLoggerFactory.unsafeSet(loggers);
+        ContextEnricher.CTX.set(Map.of("custom_source", "\"asyncContextTest\""));
+        try {
+            final var logger = loggers.getLogger("foo", null);
+            logger.info("test");
+        } finally {
+            ContextEnricher.CTX.remove();
+        }
+        // flush
+        final var handler = loggers.getLogger("", null).getHandlers()[0];
+        handler.close();
+
+        final var records = SimpleFormattedHandler.records();
+        assertEquals(1, records.size());
+        assertEquals(
+                "\"level\":\"INFO\",\"logger\":\"foo\",\"method\":\"log\",\"message\":\"test\",\"class\":\"io.yupiik.logging.jul.logger.YupiikLogger\",\"custom_source\":\"asyncContextTest\"}\n",
+                records.get(0).substring(records.get(0).indexOf(',') + 1));
+    }
+
+    public static class ContextEnricher implements Function<LogRecord, Map<String, String>> {
+        private static final ThreadLocal<Map<String, String>> CTX = new ThreadLocal<>();
+
+        @Override
+        public Map<String, String> apply(final LogRecord logRecord) {
+            return ofNullable(CTX.get()).orElseGet(Map::of);
+        }
+    }
+
     public static class AsyncTestHandler extends AsyncHandler {
         private static Map<String, String> conf;
 
@@ -68,7 +123,32 @@ class AsyncHandlerTest {
         }
     }
 
-    public static class SimpleHandler extends Handler {
+    public static abstract class BaseHandler extends Handler {
+        @Override
+        public void flush() {
+            // no-op
+        }
+
+        @Override
+        public void close() throws SecurityException {
+            flush();
+        }
+    }
+
+    public static class SimpleFormattedHandler extends BaseHandler {
+        private static final List<String> RECORDS = new ArrayList<>();
+
+        public synchronized static List<String> records() {
+            return new ArrayList<>(RECORDS);
+        }
+
+        @Override
+        public synchronized void publish(final LogRecord record) {
+            RECORDS.add(getFormatter().format(record));
+        }
+    }
+
+    public static class SimpleHandler extends BaseHandler {
         private static final List<LogRecord> RECORDS = new ArrayList<>();
 
         public synchronized static List<LogRecord> records() {
@@ -78,16 +158,6 @@ class AsyncHandlerTest {
         @Override
         public synchronized void publish(final LogRecord record) {
             RECORDS.add(record);
-        }
-
-        @Override
-        public void flush() {
-            // no-op
-        }
-
-        @Override
-        public void close() throws SecurityException {
-            flush();
         }
     }
 }
