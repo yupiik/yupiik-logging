@@ -57,11 +57,15 @@ Here is its configuration - all are prefixed with `io.yupiik.logging.jul.handler
 | bufferSize                | -1                                                | if positive the in memory buffer used to store data before flushing them to the disk (in bytes)
 | archiveDirectory          | ${application.base}/logs/archives/                | where compressed logs are put.
 | archiveFormat             | gzip                                              | zip or gzip.
-| archiveOlderThan          | -1                                                | how many days files are kept before being compressed
-| purgeOlderThan            | -1                                                | how many days files are kept before being deleted, note: it applies on archives and not log files so 2 days of archiving and 3 days of purge makes it deleted after 5 days.
+| archiveOlderThan          | -1                                                | how many days files are kept before being compressed (in Duration Format)
+| purgeOlderThan            | -1                                                | how many days files are kept before being deleted, note: it applies on archives and not log files so 2 days of archiving and 3 days of purge makes it deleted after 5 days (in Duration Format).
 | compressionLevel          | -1                                                | In case of zip archiving the zip compression level (-1 for off or 0-9).
 | maxArchives               | -1                                                | Max number of archives (zip/gzip) to keep, ignored if negative (you can review `io.yupiik.logging.jul.handler.LocalFileHandlerTest.purgeMaxArchive` for some sample configuration).
 |===
+
+=== Duration Format
+
+The format for the String to be parsed is `PnDTnHnMn.nS` where `nD` means `n` number of Days, `nH` means `n` number of Hours, `nM` means `n` number of Minutes, `nS` means `n` number of Seconds and `T` is a prefix that must be used before the part consisting of `nHnMn.nS`.
 
 == Async handler
 

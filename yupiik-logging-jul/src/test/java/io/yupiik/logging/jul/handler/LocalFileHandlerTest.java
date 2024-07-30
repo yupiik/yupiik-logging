@@ -65,6 +65,7 @@ class LocalFileHandlerTest {
         config.put("limit", Long.toString(10 * 1024));
         config.put("level", "INFO");
         config.put("dateCheckInterval", "PT1S");
+        config.put("archiveOlderThan", "P2D");
 
         final LocalFileHandler handler = new LocalFileHandler() {
             @Override
