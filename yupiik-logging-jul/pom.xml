@@ -31,7 +31,7 @@
     <dependency>
       <groupId>org.graalvm.nativeimage</groupId>
       <artifactId>svm</artifactId>
-      <version>23.1.1</version>
+      <version>24.0.2</version>
       <scope>provided</scope>
     </dependency>
   </dependencies>
@@ -71,4 +71,11 @@
       </plugin>
     </plugins>
   </build>
+  <repositories>
+    <repository>
+      <id>maven_central</id>
+      <name>Maven Central</name>
+      <url>https://repo.maven.apache.org/maven2/</url>
+    </repository>
+  </repositories>
 </project>
