@@ -148,40 +148,39 @@
                 <h1>Java Util Logging (JUL) integration</h1>
             </div>
             <div class="page-content-body">
-                <div class="sect1">
-<h2 id="_usage_with_graalvm">Usage with GraalVM</h2>
-<div class="sectionbody">
-<div class="paragraph">
-<p>Yupiik Logging JUL is integrated with GraalVM native image feature.
-To enable it you must set in <code>native-image</code> command line the following system property: <code>-Djava.util.logging.manager=io.yupiik.logging.jul.YupiikLogManager</code>.
-Other required setup is done in the jar and automatically picked up by <code>native-image</code>.</p>
-</div>
-<div class="admonitionblock note">
-<table>
-<tr>
-<td class="icon">
-<div class="title">Note</div>
-</td>
-<td class="content">
-yupiik-logging-jul will set itself as JUL LogManager during the build time so ensure it does not compete with another logging framework.
-</td>
-</tr>
-</table>
-</div>
-<div class="paragraph">
-<p>Once done you can run with no logging configuration or override it through the standard <code>java.util.logging.config.file</code> system property.</p>
-</div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_arthur_integration">Arthur Integration</h2>
-<div class="sectionbody">
-<div class="paragraph">
-<p>To use this module with <a href="https://geronimo.apache.org/arthur/">Arthur</a> you can use this configuration:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-xml hljs" data-lang="xml">&lt;plugin&gt; &lt;!-- mvn [package] -Parthur arthur:native-image -e --&gt;
+                <div class="sect1" id="_usage_with_graalvm">
+  <h2>Usage with GraalVM</h2>
+ <div class="sectionbody">
+ <div class="paragraph">
+Yupiik Logging JUL is integrated with GraalVM native image feature. To enable it you must set in <code>native-image</code> command line the following system property: <code>-Djava.util.logging.manager=io.yupiik.logging.jul.YupiikLogManager</code>. Other required setup is done in the jar and automatically picked up by <code>native-image</code>. </div>
+ <div class="admonitionblock note">
+  <table>
+    <tbody>
+     <tr>
+      <td class="icon">
+     <div class="title">NOTE</div>
+       </td>
+      <td class="content">
+yupiik-logging-jul will set itself as JUL LogManager during the build time so ensure it does not compete with another logging framework.    </td>
+   </tr>
+      </tbody>
+  </table>
+ </div>
+ <div class="paragraph">
+ <p>Once done you can run with no logging configuration or override it through the standard <code>java.util.logging.config.file</code> system property.</p>
+ </div>
+ </div>
+ </div>
+ <div class="sect1" id="_arthur_integration">
+  <h2>Arthur Integration</h2>
+ <div class="sectionbody">
+ <div class="paragraph">
+ <p>To use this module with  <a href="https://geronimo.apache.org/arthur/">Arthur</a>
+ you can use this configuration:</p>
+ </div>
+ <div class="listingblock">
+ <div class="content">
+ <pre class="highlightjs highlight"><code class="language-xml hljs" data-lang="xml">&lt;plugin&gt; &lt;!-- mvn [package] -Parthur arthur:native-image -e --&gt;
   &lt;groupId&gt;org.apache.geronimo.arthur&lt;/groupId&gt;
   &lt;artifactId&gt;arthur-maven-plugin&lt;/artifactId&gt;
   &lt;version&gt;1.0.1&lt;/version&gt;
@@ -196,10 +195,10 @@ yupiik-logging-jul will set itself as JUL LogManager during the build time so en
     &lt;/customOptions&gt;
   &lt;/configuration&gt;
 &lt;/plugin&gt;</code></pre>
-</div>
-</div>
-</div>
-</div>
+ </div>
+ </div>
+ </div>
+ </div>
                 
                 
             </div>

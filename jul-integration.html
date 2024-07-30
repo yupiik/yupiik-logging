@@ -149,324 +149,364 @@
             </div>
             <div class="page-content-body">
                 <div id="preamble">
-<div class="sectionbody">
-<div class="paragraph">
-<p>Java Util Logging integration is provided as part of the artifact:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-xml hljs" data-lang="xml">&lt;dependency&gt;
+ <div class="sectionbody">
+ <p> <div class="paragraph">
+ <p>
+Java Util Logging integration is provided as part of the artifact:
+ </p>
+ </div>
+</p>
+ </div>
+ </div>
+ <div class="listingblock">
+ <div class="content">
+ <pre class="highlightjs highlight"><code class="language-xml hljs" data-lang="xml">&lt;dependency&gt;
   &lt;groupId&gt;io.yupiik.logging&lt;/groupId&gt;
   &lt;artifactId&gt;yupiik-logging-jul&lt;/artifactId&gt;
   &lt;version&gt;${yupiik-logging.version}&lt;/version&gt;
 &lt;/dependency&gt;</code></pre>
-</div>
-</div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_use_globally">Use globally</h2>
-<div class="sectionbody">
-<div class="listingblock">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-none hljs">java .... -Djava.util.logging.manager=io.yupiik.logging.jul.YupiikLogManager ...</code></pre>
-</div>
-</div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_configuration">Configuration</h2>
-<div class="sectionbody">
-<div class="paragraph">
-<p>Configuration is close to default JUL one with small differences:</p>
-</div>
-<div class="olist arabic">
-<ol class="arabic">
-<li>
-<p>handlers don&#8217;t need to configure themselves in their constructor or so for common properties (formatter, level, &#8230;&#8203;), the framework does it automatically</p>
-</li>
-<li>
-<p><code>InlineFormatter</code> and <code>JsonFormatter</code> support aliases (reflection free instantiation) with <code>inline</code> and <code>json</code> you can use in the configuration</p>
-</li>
-</ol>
-</div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_standard_handler">Standard handler</h2>
-<div class="sectionbody">
-<div class="paragraph">
-<p><code>io.yupiik.logging.jul.handler.StandardHandler</code> enables to log on stdout and stderr.
-For all level from finest/debug to info it will go on stdout and others (warnings, errors/severes) will go on stderr.</p>
-</div>
-<div class="paragraph">
-<p>It can be configured with the <code>std</code> or <code>standard</code> alias too.</p>
-</div>
-<div class="paragraph">
-<p>There is also its companion <code>stdout</code> or <code>io.yupiik.logging.jul.handler.StdoutHandler</code> which only outputs on stdout.</p>
-</div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_file_handler">File Handler</h2>
-<div class="sectionbody">
-<div class="paragraph">
-<p>A <code>io.yupiik.logging.jul.handler.LocalFileHandler</code> is also provided to be able to log in a file and rotate the log file.
-Indeed you can use JVM <code>FileHandler</code> but this one is a bit more powerful in practise if you don&#8217;t run in a container and can&#8217;t use a docker logging driver or equivalent.</p>
-</div>
-<div class="paragraph">
-<p>Here is its configuration - all are prefixed with <code>io.yupiik.logging.jul.handler.LocalFileHandler.</code> and the standard configuration (encoding, level, &#8230;&#8203;) is still supported even if not listed.</p>
-</div>
-<table class="tableblock frame-all grid-all stretch">
-<colgroup>
-<col style="width: 16.6666%;">
-<col style="width: 16.6666%;">
-<col style="width: 66.6668%;">
-</colgroup>
-<thead>
-<tr>
-<th class="tableblock halign-left valign-top">Name</th>
-<th class="tableblock halign-left valign-top">Default Value</th>
-<th class="tableblock halign-left valign-top">Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td class="tableblock halign-left valign-top"><div class="content"><div class="paragraph">
-<p>filenamePattern</p>
-</div></div></td>
-<td class="tableblock halign-left valign-top"><div class="content"><div class="paragraph">
-<p>${application.base}/logs/logs.%s.%03d.log</p>
-</div></div></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">where log files are created, it uses String.format() and gives you the date and file number - in this order. If you replace <code>%s</code> by <code>%sH</code> you will append the hour in the filename. <code>%sHm</code> adds the minutes (a more precise pattern is not needed nor recommended).</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><div class="content"><div class="paragraph">
-<p>noRotation</p>
-</div></div></td>
-<td class="tableblock halign-left valign-top"><div class="content"><div class="paragraph">
-<p>false</p>
-</div></div></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">if <code>true</code>, once a log file is opened, it is kept for the life of the process.</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><div class="content"><div class="paragraph">
-<p>overwrite</p>
-</div></div></td>
-<td class="tableblock halign-left valign-top"><div class="content"><div class="paragraph">
-<p>false</p>
-</div></div></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">if <code>true</code>, existing files are reused.</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><div class="content"><div class="paragraph">
-<p>truncateIfExists</p>
-</div></div></td>
-<td class="tableblock halign-left valign-top"><div class="content"><div class="paragraph">
-<p>false</p>
-</div></div></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">if <code>true</code>, opening a file is not in append mode (previous content is erased).</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><div class="content"><div class="paragraph">
-<p>limit</p>
-</div></div></td>
-<td class="tableblock halign-left valign-top"><div class="content"><div class="paragraph">
-<p>10 Megabytes</p>
-</div></div></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">limit size indicating the file should be rotated - in long format</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><div class="content"><div class="paragraph">
-<p>dateCheckInterval</p>
-</div></div></td>
-<td class="tableblock halign-left valign-top"><div class="content"><div class="paragraph">
-<p>5 seconds</p>
-</div></div></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">how often the date should be computed to rotate the file (don&#8217;t do it each time for performances reason, means you can get few records of next day in a file name with current day). In java Duration format (ex: <code>PT5S</code>).</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><div class="content"><div class="paragraph">
-<p>bufferSize</p>
-</div></div></td>
-<td class="tableblock halign-left valign-top"><div class="content"><div class="paragraph">
-<p>-1</p>
-</div></div></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">if positive the in memory buffer used to store data before flushing them to the disk (in bytes)</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><div class="content"><div class="paragraph">
-<p>archiveDirectory</p>
-</div></div></td>
-<td class="tableblock halign-left valign-top"><div class="content"><div class="paragraph">
-<p>${application.base}/logs/archives/</p>
-</div></div></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">where compressed logs are put.</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><div class="content"><div class="paragraph">
-<p>archiveFormat</p>
-</div></div></td>
-<td class="tableblock halign-left valign-top"><div class="content"><div class="paragraph">
-<p>gzip</p>
-</div></div></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">zip or gzip.</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><div class="content"><div class="paragraph">
-<p>archiveOlderThan</p>
-</div></div></td>
-<td class="tableblock halign-left valign-top"><div class="content"><div class="paragraph">
-<p>-1</p>
-</div></div></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">how many days files are kept before being compressed</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><div class="content"><div class="paragraph">
-<p>purgeOlderThan</p>
-</div></div></td>
-<td class="tableblock halign-left valign-top"><div class="content"><div class="paragraph">
-<p>-1</p>
-</div></div></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">how many days files are kept before being deleted, note: it applies on archives and not log files so 2 days of archiving and 3 days of purge makes it deleted after 5 days.</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><div class="content"><div class="paragraph">
-<p>compressionLevel</p>
-</div></div></td>
-<td class="tableblock halign-left valign-top"><div class="content"><div class="paragraph">
-<p>-1</p>
-</div></div></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">In case of zip archiving the zip compression level (-1 for off or 0-9).</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><div class="content"><div class="paragraph">
-<p>maxArchives</p>
-</div></div></td>
-<td class="tableblock halign-left valign-top"><div class="content"><div class="paragraph">
-<p>-1</p>
-</div></div></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Max number of archives (zip/gzip) to keep, ignored if negative (you can review <code>io.yupiik.logging.jul.handler.LocalFileHandlerTest.purgeMaxArchive</code> for some sample configuration).</p></td>
-</tr>
-</tbody>
-</table>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_pattern_formatter">Pattern formatter</h2>
-<div class="sectionbody">
-<div class="paragraph">
-<p>The library also provides a pattern formatter.
-It does not use <code>String.format</code> as <code>SimpleFormatter</code> does and can be configured either with <code>io.yupiik.logging.jul.formatter.PatternFormatter.pattern</code> property or passing the pattern to the formatter alias (reflection free mode): <code>pattern(&lt;pattern to use&gt;)</code>.
-Its syntax uses <code>%</code> to mark elements of the log record. Here is the list:</p>
-</div>
-<table class="tableblock frame-all grid-all stretch">
-<colgroup>
-<col style="width: 20%;">
-<col style="width: 80%;">
-</colgroup>
-<thead>
-<tr>
-<th class="tableblock halign-left valign-top">Name</th>
-<th class="tableblock halign-left valign-top">Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td class="tableblock halign-left valign-top"><div class="content"><div class="paragraph">
-<p>%%</p>
-</div></div></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Escapes <code>%</code> character.</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><div class="content"><div class="paragraph">
-<p>%n</p>
-</div></div></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">End of line.</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><div class="content"><div class="paragraph">
-<p>%l or %level</p>
-</div></div></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Log record level.</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><div class="content"><div class="paragraph">
-<p>%m or %message</p>
-</div></div></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Log record message.</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><div class="content"><div class="paragraph">
-<p>%c or %logger</p>
-</div></div></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Logger name.</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><div class="content"><div class="paragraph">
-<p>%C or %class</p>
-</div></div></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Class name if exists or empty.</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><div class="content"><div class="paragraph">
-<p>%M or %method</p>
-</div></div></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Method name if exists or empty.</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><div class="content"><div class="paragraph">
-<p>%d or %date</p>
-</div></div></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">The instant value. Note it can be followed by a date time formatter pattern between braces.</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><div class="content"><div class="paragraph">
-<p>%x or %exception</p>
-</div></div></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">The exception. It will be preceeded by a new line if existing to ensure it integrates well in log output.</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><div class="content"><div class="paragraph">
-<p>%T or %threadId</p>
-</div></div></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Thread ID.</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><div class="content"><div class="paragraph">
-<p>%t or %thread or %threadName</p>
-</div></div></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Thread name - only works in synchronous mode.</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><div class="content"><div class="paragraph">
-<p>%r</p>
-</div></div></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Duration (in ms) since the startup of the application (creating of the pattern formatter actually).</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><div class="content"><div class="paragraph">
-<p>%uuid</p>
-</div></div></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Random UUID.</p></td>
-</tr>
-</tbody>
-</table>
-<div class="paragraph">
-<p>Pattern example value: <code>%d [%l][%c][%C][%M] %m%x%n</code>, it will output lines like <code>1970-01-01T00:00:00Z [INFO][the.logger][the.source][the.method] test message\n</code>.</p>
-</div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_json_formatter">JSON formatter</h2>
-<div class="sectionbody">
-<div class="paragraph">
-<p>JSON formatter relies on JSON-B until 1.0.2, JSON-P starting with 1.0.3 and no dependency starting with 1.0.8 so ensure to add the related dependencies.
-It can be done with this list for example:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-xml hljs" data-lang="xml">&lt;dependency&gt;
+ </div>
+ </div>
+ <div class="sect1" id="_use_globally">
+  <h2>Use globally</h2>
+ <div class="sectionbody">
+ <div class="listingblock">
+ <div class="content">
+ <pre class="highlightjs highlight"><code class="null hljs">java .... -Djava.util.logging.manager=io.yupiik.logging.jul.YupiikLogManager ...</code></pre>
+ </div>
+ </div>
+ </div>
+ </div>
+ <div class="sect1" id="_configuration">
+  <h2>Configuration</h2>
+ <div class="sectionbody">
+ <div class="paragraph">
+ <p>
+Configuration is close to default JUL one with small differences:
+ </p>
+ </div>
+ <ol>
+  <li>
+ <p>
+handlers don't need to configure themselves in their constructor or so for common properties (formatter, level, ...), the framework does it automatically
+ </p>
+  </li>
+  <li>
+ <div class="paragraph">
+ <p><code>InlineFormatter</code> and <code>JsonFormatter</code> support aliases (reflection free instantiation) with <code>inline</code> and <code>json</code> you can use in the configuration</p>
+ </div>
+  </li>
+ </ol>
+ </div>
+ </div>
+ <div class="sect1" id="_standard_handler">
+  <h2>Standard handler</h2>
+ <div class="sectionbody">
+ <div class="paragraph">
+ <p><code>io.yupiik.logging.jul.handler.StandardHandler</code> enables to log on stdout and stderr. For all level from finest/debug to info it will go on stdout and others (warnings, errors/severes) will go on stderr.</p>
+ </div>
+ <div class="paragraph">
+ <p>It can be configured with the <code>std</code> or <code>standard</code> alias too.</p>
+ </div>
+ <div class="paragraph">
+ <p>There is also its companion <code>stdout</code> or <code>io.yupiik.logging.jul.handler.StdoutHandler</code> which only outputs on stdout.</p>
+ </div>
+ </div>
+ </div>
+ <div class="sect1" id="_file_handler">
+  <h2>File Handler</h2>
+ <div class="sectionbody">
+ <div class="paragraph">
+ <p>A <code>io.yupiik.logging.jul.handler.LocalFileHandler</code> is also provided to be able to log in a file and rotate the log file. Indeed you can use JVM <code>FileHandler</code> but this one is a bit more powerful in practise if you don't run in a container and can't use a docker logging driver or equivalent.</p>
+ </div>
+ <div class="paragraph">
+ <p>Here is its configuration - all are prefixed with <code>io.yupiik.logging.jul.handler.LocalFileHandler.</code> and the standard configuration (encoding, level, ...) is still supported even if not listed.</p>
+ </div>
+ <table class="tableblock frame-all grid-all stretch">
+  <colgroup>
+   <col width="16%">
+   <col width="16%">
+   <col width="64%">
+  </colgroup>
+  <thead>
+   <tr>
+    <th>
+ Name                          </th>
+    <th>
+ Default Value                                         </th>
+    <th>
+ Description    </th>
+   </tr>
+  </thead>
+  <tbody>
+   <tr>
+    <td>
+ filenamePattern               </td>
+    <td>
+ <div class="paragraph">
+ <p> $/logs/logs.%s.%03d.log         </p>
+ </div>
+    </td>
+    <td>
+ where log files are created, it uses String.format() and gives you the date and file number - in this order. If you replace `%s` by `%sH` you will append the hour in the filename. `%sHm` adds the minutes (a more precise pattern is not needed nor recommended).    </td>
+   </tr>
+   <tr>
+    <td>
+ noRotation                    </td>
+    <td>
+ false                                                 </td>
+    <td>
+ if `true`, once a log file is opened, it is kept for the life of the process.    </td>
+   </tr>
+   <tr>
+    <td>
+ overwrite                     </td>
+    <td>
+ false                                                 </td>
+    <td>
+ if `true`, existing files are reused.    </td>
+   </tr>
+   <tr>
+    <td>
+ truncateIfExists              </td>
+    <td>
+ false                                                 </td>
+    <td>
+ if `true`, opening a file is not in append mode (previous content is erased).    </td>
+   </tr>
+   <tr>
+    <td>
+ limit                         </td>
+    <td>
+ 10 Megabytes                                          </td>
+    <td>
+ limit size indicating the file should be rotated - in long format    </td>
+   </tr>
+   <tr>
+    <td>
+ dateCheckInterval             </td>
+    <td>
+ 5 seconds                                             </td>
+    <td>
+ how often the date should be computed to rotate the file (don't do it each time for performances reason, means you can get few records of next day in a file name with current day). In java Duration format (ex: `PT5S`).    </td>
+   </tr>
+   <tr>
+    <td>
+ bufferSize                    </td>
+    <td>
+ -1                                                    </td>
+    <td>
+ if positive the in memory buffer used to store data before flushing them to the disk (in bytes)    </td>
+   </tr>
+   <tr>
+    <td>
+ archiveDirectory              </td>
+    <td>
+ <div class="paragraph">
+ <p> $/logs/archives/                </p>
+ </div>
+    </td>
+    <td>
+ where compressed logs are put.    </td>
+   </tr>
+   <tr>
+    <td>
+ archiveFormat                 </td>
+    <td>
+ gzip                                                  </td>
+    <td>
+ zip or gzip.    </td>
+   </tr>
+   <tr>
+    <td>
+ archiveOlderThan              </td>
+    <td>
+ -1                                                    </td>
+    <td>
+ how many days files are kept before being compressed (in Duration Format)    </td>
+   </tr>
+   <tr>
+    <td>
+ purgeOlderThan                </td>
+    <td>
+ -1                                                    </td>
+    <td>
+ how many days files are kept before being deleted, note: it applies on archives and not log files so 2 days of archiving and 3 days of purge makes it deleted after 5 days (in Duration Format).    </td>
+   </tr>
+   <tr>
+    <td>
+ compressionLevel              </td>
+    <td>
+ -1                                                    </td>
+    <td>
+ In case of zip archiving the zip compression level (-1 for off or 0-9).    </td>
+   </tr>
+   <tr>
+    <td>
+ maxArchives                   </td>
+    <td>
+ -1                                                    </td>
+    <td>
+ Max number of archives (zip/gzip) to keep, ignored if negative (you can review `io.yupiik.logging.jul.handler.LocalFileHandlerTest.purgeMaxArchive` for some sample configuration).    </td>
+   </tr>
+  </tbody>
+ </table>
+ <div class="sect2" id="_duration_format">
+  <h3>Duration Format</h3>
+ <div class="sectionbody">
+ <div class="paragraph">
+ <p>The format for the String to be parsed is <code>PnDTnHnMn.nS</code> where <code>nD</code> means <code>n</code> number of Days, <code>nH</code> means <code>n</code> number of Hours, <code>nM</code> means <code>n</code> number of Minutes, <code>nS</code> means <code>n</code> number of Seconds and <code>T</code> is a prefix that must be used before the part consisting of <code>nHnMn.nS</code>.</p>
+ </div>
+ </div>
+ </div>
+ </div>
+ </div>
+ <div class="sect1" id="_async_handler">
+  <h2>Async handler</h2>
+ <div class="sectionbody">
+ <div class="paragraph">
+ <p><code>io.yupiik.logging.jul.handler.AsyncHandler</code> enables to handle asynchronously in a background thread log events (<code>LogRecord</code>).</p>
+ </div>
+ <div class="paragraph">
+ <p><code>io.yupiik.logging.jul.handler.AsyncHandler.delegate.class</code> enables to configure the delegate class name.</p>
+ </div>
+ <div class="paragraph">
+ <p>The properties like <code>io.yupiik.logging.jul.handler.AsyncHandler.formatter</code> etc are forwarded to the delegate if set - and generally override the default ones.</p>
+ </div>
+ <div class="admonitionblock important">
+  <table>
+    <tbody>
+     <tr>
+      <td class="icon">
+     <div class="title">IMPORTANT</div>
+       </td>
+      <td class="content">
+ <div class="paragraph">
+ <p>logging asynchronously means you are loosing the context related to threads - if you are using a <code>ThreadLocal</code> and not yet a <code>ScopedValue</code> in a 100% virtual thread based application. For that purposes we enable the formatters and delegate handler to implement <code>io.yupiik.logging.jul.api.RecordFreezer</code> which will take the <code>LogRecord</code> when emitted, convert it to a new <code>LogRecord</code> (<code>RecordFreezer.FrozenLogRecord</code> is a default implementation) which is initialized at that moment and just read when emitted to the delegating handler to have the proper informations. This is often used for custom JSON entries mapper (similar to MDC/NDC) when the implementation relies on <code>ThreadLocal</code>.</p>
+ </div>
+    </td>
+   </tr>
+      </tbody>
+  </table>
+ </div>
+ </div>
+ </div>
+ <div class="sect1" id="_pattern_formatter">
+  <h2>Pattern formatter</h2>
+ <div class="sectionbody">
+ <div class="paragraph">
+ <p>The library also provides a pattern formatter. It does not use <code>String.format</code> as <code>SimpleFormatter</code> does and can be configured either with <code>io.yupiik.logging.jul.formatter.PatternFormatter.pattern</code> property or passing the pattern to the formatter alias (reflection free mode): <code>pattern(&lt;pattern to use&gt;)</code>. Its syntax uses <code>%</code> to mark elements of the log record. Here is the list:</p>
+ </div>
+ <table class="tableblock frame-all grid-all stretch">
+  <colgroup>
+   <col width="20%">
+   <col width="80%">
+  </colgroup>
+  <thead>
+   <tr>
+    <th>
+Name    </th>
+    <th>
+Description    </th>
+   </tr>
+  </thead>
+  <tbody>
+   <tr>
+    <td>
+%%    </td>
+    <td>
+Escapes `%` character.    </td>
+   </tr>
+   <tr>
+    <td>
+%n    </td>
+    <td>
+End of line.    </td>
+   </tr>
+   <tr>
+    <td>
+%l or %level    </td>
+    <td>
+Log record level.    </td>
+   </tr>
+   <tr>
+    <td>
+%m or %message    </td>
+    <td>
+Log record message.    </td>
+   </tr>
+   <tr>
+    <td>
+%c or %logger    </td>
+    <td>
+Logger name.    </td>
+   </tr>
+   <tr>
+    <td>
+%C or %class    </td>
+    <td>
+Class name if exists or empty.    </td>
+   </tr>
+   <tr>
+    <td>
+%M or %method    </td>
+    <td>
+Method name if exists or empty.    </td>
+   </tr>
+   <tr>
+    <td>
+%d or %date    </td>
+    <td>
+The instant value. Note it can be followed by a date time formatter pattern between braces.    </td>
+   </tr>
+   <tr>
+    <td>
+%x or %exception    </td>
+    <td>
+The exception. It will be preceeded by a new line if existing to ensure it integrates well in log output.    </td>
+   </tr>
+   <tr>
+    <td>
+%T or %threadId    </td>
+    <td>
+Thread ID.    </td>
+   </tr>
+   <tr>
+    <td>
+%t or %thread or %threadName    </td>
+    <td>
+Thread name - only works in synchronous mode.    </td>
+   </tr>
+   <tr>
+    <td>
+%r    </td>
+    <td>
+Duration (in ms) since the startup of the application (creating of the pattern formatter actually).    </td>
+   </tr>
+   <tr>
+    <td>
+%uuid    </td>
+    <td>
+Random UUID.    </td>
+   </tr>
+  </tbody>
+ </table>
+ <div class="paragraph">
+ <p>Pattern example value: <code>%d [%l][%c][%C][%M] %m%x%n</code>, it will output lines like <code>1970-01-01T00:00:00Z [INFO][the.logger][the.source][the.method] test message\n</code>.</p>
+ </div>
+ </div>
+ </div>
+ <div class="sect1" id="_json_formatter">
+  <h2>JSON formatter</h2>
+ <div class="sectionbody">
+ <div class="paragraph">
+ <p>
+JSON formatter relies on JSON-B until 1.0.2, JSON-P starting with 1.0.3 and no dependency starting with 1.0.8 so ensure to add the related dependencies. It can be done with this list for example:
+ </p>
+ </div>
+ <div class="listingblock">
+ <div class="content">
+ <pre class="highlightjs highlight"><code class="language-xml hljs" data-lang="xml">&lt;dependency&gt;
   &lt;groupId&gt;org.apache.geronimo.specs&lt;/groupId&gt;
   &lt;artifactId&gt;geronimo-json_1.1_spec&lt;/artifactId&gt;
   &lt;version&gt;1.5&lt;/version&gt;
@@ -476,93 +516,108 @@ It can be done with this list for example:</p>
   &lt;artifactId&gt;johnzon-core&lt;/artifactId&gt;
   &lt;version&gt;1.2.19&lt;/version&gt;
 &lt;/dependency&gt;</code></pre>
-</div>
-</div>
-<div class="admonitionblock tip">
-<table>
-<tr>
-<td class="icon">
-<div class="title">Tip</div>
-</td>
-<td class="content">
-the JSON formatter can be configured passing <code>json(useUUID=[false|true],formatMessage=[true|false],customEntriesMapper=&lt;fqn of a Function&lt;LogRecord, Map&lt;String, String&gt;&gt;&gt;)</code> value instead of just <code>json</code>. All configuration being optional.
-<code>formatMessage</code> enables to skip the message formatting when your application does not rely on it - faster and uses less the CPU, <code>useUUID</code> enables to force an unique ID in the record.
-<code>customEntriesMapper</code> enables to pass a function taking the log record and converting it to a map of data to append to the json object (must be <code>String</code> key/values).
-</td>
-</tr>
-</table>
-</div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_sample_configuration_files">Sample Configuration Files</h2>
-<div class="sectionbody">
-<div class="paragraph">
-<p>As with native JUL <code>LogManager</code>, you can configure the runtime logging with the following system property: <code>-Djava.util.logging.config.file=&lt;path to config file&gt;</code>.</p>
-</div>
-<div class="admonitionblock note">
-<table>
-<tr>
-<td class="icon">
-<div class="title">Note</div>
-</td>
-<td class="content">
-don&#8217;t forget <code>-Djava.util.logging.manager=io.yupiik.logging.jul.YupiikLogManager</code> too.
-</td>
-</tr>
-</table>
-</div>
-<div class="paragraph">
-<p>Here is a sample configuration switching to JSON logging:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-properties hljs" data-lang="properties">.handlers = io.yupiik.logging.jul.handler.StandardHandler
+ </div>
+ </div>
+ <div class="admonitionblock tip">
+  <table>
+    <tbody>
+     <tr>
+      <td class="icon">
+     <div class="title">TIP</div>
+       </td>
+      <td class="content">
+ <div class="paragraph">
+ <p>the JSON formatter can be configured passing <code>json(useUUID=[false|true],formatMessage=[true|false],customEntriesMapper=&lt;fqn of a Function&lt;LogRecord, Map&lt;String, String&gt;&gt;&gt;)</code> value instead of just <code>json</code>. All configuration being optional.<code>formatMessage</code> enables to skip the message formatting when your application does not rely on it - faster and uses less the CPU, <code>useUUID</code> enables to force an unique ID in the record.<code>customEntriesMapper</code> enables to pass a function taking the log record and converting it to a map of data to append to the json object (must be <code>String</code> key/values).</p>
+ </div>
+    </td>
+   </tr>
+      </tbody>
+  </table>
+ </div>
+ </div>
+ </div>
+ <div class="sect1" id="_sample_configuration_files">
+  <h2>Sample Configuration Files</h2>
+ <div class="sectionbody">
+ <div class="paragraph">
+ <p>As with native JUL <code>LogManager</code>, you can configure the runtime logging with the following system property: <code>-Djava.util.logging.config.file=&lt;path to config file&gt;</code>.</p>
+ </div>
+ <div class="admonitionblock note">
+  <table>
+    <tbody>
+     <tr>
+      <td class="icon">
+     <div class="title">NOTE</div>
+       </td>
+      <td class="content">
+ <div class="paragraph">
+ <p>don't forget <code>-Djava.util.logging.manager=io.yupiik.logging.jul.YupiikLogManager</code> too.</p>
+ </div>
+    </td>
+   </tr>
+      </tbody>
+  </table>
+ </div>
+ <div class="paragraph">
+ <p>
+Here is a sample configuration switching to JSON logging:
+ </p>
+ </div>
+ <div class="listingblock">
+ <div class="content">
+ <pre class="highlightjs highlight"><code class="language-properties hljs" data-lang="properties">.handlers = io.yupiik.logging.jul.handler.StandardHandler
 io.yupiik.logging.jul.handler.StandardHandler.formatter = json</code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>The same configuration for a standard inline logging (text style) but tuning the log level:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-properties hljs" data-lang="properties">.handlers = io.yupiik.logging.jul.handler.StandardHandler
+ </div>
+ </div>
+ <div class="paragraph">
+ <p>
+The same configuration for a standard inline logging (text style) but tuning the log level:
+ </p>
+ </div>
+ <div class="listingblock">
+ <div class="content">
+ <pre class="highlightjs highlight"><code class="language-properties hljs" data-lang="properties">.handlers = io.yupiik.logging.jul.handler.StandardHandler
 io.yupiik.logging.jul.handler.StandardHandler.level = FINEST
 com.app.level = FINEST</code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>Here is a configuration using a pattern:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-properties hljs" data-lang="properties">.handlers = standard
+ </div>
+ </div>
+ <div class="paragraph">
+ <p>
+Here is a configuration using a pattern:
+ </p>
+ </div>
+ <div class="listingblock">
+ <div class="content">
+ <pre class="highlightjs highlight"><code class="language-properties hljs" data-lang="properties">.handlers = standard
 standard.formatter = pattern(%d [%l][%c][%C][%M] %m%x%n)</code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>And finally a configuration using file output instead of standard one:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-properties hljs" data-lang="properties">.handlers = file
+ </div>
+ </div>
+ <div class="paragraph">
+ <p>
+And finally a configuration using file output instead of standard one:
+ </p>
+ </div>
+ <div class="listingblock">
+ <div class="content">
+ <pre class="highlightjs highlight"><code class="language-properties hljs" data-lang="properties">.handlers = file
 file.formatter = inline</code></pre>
-</div>
-</div>
-<div class="admonitionblock tip">
-<table>
-<tr>
-<td class="icon">
-<div class="title">Tip</div>
-</td>
-<td class="content">
-you can set all properties as system properties and also environment variables (in uppercase and dots replaced by underscores).
-</td>
-</tr>
-</table>
-</div>
-</div>
-</div>
+ </div>
+ </div>
+ <div class="admonitionblock tip">
+  <table>
+    <tbody>
+     <tr>
+      <td class="icon">
+     <div class="title">TIP</div>
+       </td>
+      <td class="content">
+you can set all properties as system properties and also environment variables (in uppercase and dots replaced by underscores).    </td>
+   </tr>
+      </tbody>
+  </table>
+ </div>
+ </div>
+ </div>
                 
                 
             </div>
