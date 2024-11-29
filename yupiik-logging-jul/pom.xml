@@ -27,6 +27,11 @@
   <artifactId>yupiik-logging-jul</artifactId>
   <name>Yupiik Logging :: JUL</name>
 
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <project.build.outputTimestamp>2024-11-29T15:53:10Z</project.build.outputTimestamp>
+  </properties>
+
   <dependencies>
     <dependency>
       <groupId>org.graalvm.nativeimage</groupId>
