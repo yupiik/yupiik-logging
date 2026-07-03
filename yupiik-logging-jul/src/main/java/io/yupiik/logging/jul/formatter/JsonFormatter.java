@@ -35,6 +35,7 @@ public class JsonFormatter extends Formatter implements RecordFreezer {
     private boolean useUUID;
     private boolean formatMessage = true;
     private Function<LogRecord, Map<String, String>> customEntriesMapper = null;
+    private Map<String, String> additionalFields = Map.of();
 
     public void setCustomEntriesMapper(final Function<LogRecord, Map<String, String>> customEntriesMapper) {
         this.customEntriesMapper = customEntriesMapper;
@@ -46,6 +47,10 @@ public class JsonFormatter extends Formatter implements RecordFreezer {
 
     public void setUseUUID(final boolean useUUID) {
         this.useUUID = useUUID;
+    }
+
+    public void setAdditionalFields(final Map<String, String> additionalFields) {
+        this.additionalFields = additionalFields == null ? Map.of() : additionalFields;
     }
 
     @Override
@@ -102,7 +107,12 @@ public class JsonFormatter extends Formatter implements RecordFreezer {
         } else {
             appendMapperEnrichment(record, json);
         }
+        appendAdditionalFields(json);
         return json.append('}').toString() + '\n';
+    }
+
+    private void appendAdditionalFields(final StringBuilder json) {
+        additionalFields.forEach((k, v) -> json.append(",\"").append(k).append("\":").append(simpleEscape(v)));
     }
 
     private void appendMapperEnrichment(final LogRecord record, final StringBuilder json) {

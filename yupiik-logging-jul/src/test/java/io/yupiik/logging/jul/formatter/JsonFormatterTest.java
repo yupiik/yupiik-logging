@@ -18,6 +18,7 @@ package io.yupiik.logging.jul.formatter;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
+import java.util.LinkedHashMap;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 
@@ -44,6 +45,21 @@ class JsonFormatterTest {
                         "\"logger\":\"the.logger\",\"method\":\"the.method\",\"message\":\"test message\"," +
                         "\"class\":\"the.source\"}\n"),
                 formatted);
+    }
+
+    @Test
+    void formatWithAdditionalFields() {
+        final var record = createRecord();
+        record.setThrown(null);
+        final var jsonFormatter = new JsonFormatter();
+        final var fields = new LinkedHashMap<String, String>();
+        fields.put("service.name", "my-app");
+        fields.put("quote", "a\"b");
+        jsonFormatter.setAdditionalFields(fields);
+        assertEquals("{\"timestamp\":\"1970-01-01T00:00Z\",\"level\":\"INFO\",\"logger\":\"the.logger\"," +
+                        "\"method\":\"the.method\",\"message\":\"test message\",\"class\":\"the.source\"," +
+                        "\"service.name\":\"my-app\",\"quote\":\"a\\\"b\"}\n",
+                jsonFormatter.format(record));
     }
 
     private LogRecord createRecord() {

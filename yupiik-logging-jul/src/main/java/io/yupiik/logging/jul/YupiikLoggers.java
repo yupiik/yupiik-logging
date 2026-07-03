@@ -335,11 +335,17 @@ public class YupiikLoggers {
                     if (formatter.startsWith("json(") && formatter.endsWith(")")) {
                         final var conf = formatter.substring("json(".length(), formatter.length() - 1);
                         final var config = Stream.of(conf.split(";"))
-                                .map(it -> it.split("="))
+                                .map(it -> it.split("=", 2))
                                 .collect(toMap(it -> it[0], it -> it[1]));
                         final var jsonFormatter = new JsonFormatter();
                         jsonFormatter.setUseUUID(Boolean.parseBoolean(config.get("useUUID")));
                         jsonFormatter.setFormatMessage(Boolean.parseBoolean(config.get("formatMessage")));
+                        final var additionalFields = config.entrySet().stream()
+                                .filter(it -> it.getKey().startsWith("field."))
+                                .collect(toMap(it -> it.getKey().substring("field.".length()), Map.Entry::getValue));
+                        if (!additionalFields.isEmpty()) {
+                            jsonFormatter.setAdditionalFields(additionalFields);
+                        }
                         ofNullable(config.get("customEntriesMapper")).ifPresent(clazz -> {
                             try {
                                 jsonFormatter.setCustomEntriesMapper(ofNullable(Thread.currentThread().getContextClassLoader())
