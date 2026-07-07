@@ -98,7 +98,7 @@
         }
     </style>
     
-    <link id="theme-style" rel="stylesheet" href="//www.yupiik.io/yupiik-logging/css/theme.css?v=1.0.9-SNAPSHOT">
+    <link id="theme-style" rel="stylesheet" href="//www.yupiik.io/yupiik-logging/css/theme.css?v=1.0.9">
 </head>
 <body>
     <header class="header fixed-top">
@@ -248,7 +248,10 @@ handlers don't need to configure themselves in their constructor or so for commo
  </div>
     </td>
     <td>
- where log files are created, it uses String.format() and gives you the date and file number - in this order. If you replace `%s` by `%sH` you will append the hour in the filename. `%sHm` adds the minutes (a more precise pattern is not needed nor recommended).    </td>
+ <div class="paragraph">
+ <p> where log files are created, it uses String.format() and gives you the date and file number - in this order. If you replace <code>%s</code> by <code>%sH</code> you will append the hour in the filename. <code>%sHm</code> adds the minutes (a more precise pattern is not needed nor recommended).</p>
+ </div>
+    </td>
    </tr>
    <tr>
     <td>
@@ -256,7 +259,10 @@ handlers don't need to configure themselves in their constructor or so for commo
     <td>
  false                                                 </td>
     <td>
- if `true`, once a log file is opened, it is kept for the life of the process.    </td>
+ <div class="paragraph">
+ <p> if <code>true</code>, once a log file is opened, it is kept for the life of the process.</p>
+ </div>
+    </td>
    </tr>
    <tr>
     <td>
@@ -264,7 +270,10 @@ handlers don't need to configure themselves in their constructor or so for commo
     <td>
  false                                                 </td>
     <td>
- if `true`, existing files are reused.    </td>
+ <div class="paragraph">
+ <p> if <code>true</code>, existing files are reused.</p>
+ </div>
+    </td>
    </tr>
    <tr>
     <td>
@@ -272,7 +281,10 @@ handlers don't need to configure themselves in their constructor or so for commo
     <td>
  false                                                 </td>
     <td>
- if `true`, opening a file is not in append mode (previous content is erased).    </td>
+ <div class="paragraph">
+ <p> if <code>true</code>, opening a file is not in append mode (previous content is erased).</p>
+ </div>
+    </td>
    </tr>
    <tr>
     <td>
@@ -288,7 +300,10 @@ handlers don't need to configure themselves in their constructor or so for commo
     <td>
  5 seconds                                             </td>
     <td>
- how often the date should be computed to rotate the file (don't do it each time for performances reason, means you can get few records of next day in a file name with current day). In java Duration format (ex: `PT5S`).    </td>
+ <div class="paragraph">
+ <p> how often the date should be computed to rotate the file (don't do it each time for performances reason, means you can get few records of next day in a file name with current day). In java Duration format (ex: <code>PT5S</code>).</p>
+ </div>
+    </td>
    </tr>
    <tr>
     <td>
@@ -347,7 +362,10 @@ handlers don't need to configure themselves in their constructor or so for commo
     <td>
  -1                                                    </td>
     <td>
- Max number of archives (zip/gzip) to keep, ignored if negative (you can review `io.yupiik.logging.jul.handler.LocalFileHandlerTest.purgeMaxArchive` for some sample configuration).    </td>
+ <div class="paragraph">
+ <p> Max number of archives (zip/gzip) to keep, ignored if negative (you can review <code>io.yupiik.logging.jul.handler.LocalFileHandlerTest.purgeMaxArchive</code> for some sample configuration).</p>
+ </div>
+    </td>
    </tr>
   </tbody>
  </table>
@@ -415,7 +433,10 @@ Description    </th>
     <td>
 %%    </td>
     <td>
-Escapes `%` character.    </td>
+ <div class="paragraph">
+ <p>Escapes <code>%</code> character.</p>
+ </div>
+    </td>
    </tr>
    <tr>
     <td>
@@ -527,7 +548,7 @@ JSON formatter relies on JSON-B until 1.0.2, JSON-P starting with 1.0.3 and no d
        </td>
       <td class="content">
  <div class="paragraph">
- <p>the JSON formatter can be configured passing <code>json(useUUID=[false|true],formatMessage=[true|false],customEntriesMapper=&lt;fqn of a Function&lt;LogRecord, Map&lt;String, String&gt;&gt;&gt;)</code> value instead of just <code>json</code>. All configuration being optional.<code>formatMessage</code> enables to skip the message formatting when your application does not rely on it - faster and uses less the CPU, <code>useUUID</code> enables to force an unique ID in the record.<code>customEntriesMapper</code> enables to pass a function taking the log record and converting it to a map of data to append to the json object (must be <code>String</code> key/values).</p>
+ <p>the JSON formatter can be configured passing <code>json(useUUID=[false|true];formatMessage=[true|false];customEntriesMapper=&lt;fqn of a Function&lt;LogRecord, Map&lt;String, String&gt;&gt;&gt;;field.&lt;name&gt;=&lt;value&gt;)</code> value instead of just <code>json</code>. All configuration being optional and options being separated by <code>;</code>.<code>formatMessage</code> enables to skip the message formatting when your application does not rely on it - faster and uses less the CPU, <code>useUUID</code> enables to force an unique ID in the record.<code>customEntriesMapper</code> enables to pass a function taking the log record and converting it to a map of data to append to the json object (must be <code>String</code> key/values). Any option prefixed with <code>field.</code> adds a <b>static</b> entry to every JSON record, the value being JSON-escaped by the formatter (no code needed); it is handy to stamp constant metadata such as <code>service.name</code>, e.g. <code>json(field.service.name=my-app;field.service.version=1.2.3)</code>.</p>
  </div>
     </td>
    </tr>
@@ -634,7 +655,7 @@ you can set all properties as system properties and also environment variables (
                   <li class="list-inline-item"><a title="Twitter" target="_blank" href="https://twitter.com/Yupiik/"><i class="fab fa-twitter fa-fw"></i></a></li>
                   <li class="list-inline-item"><a title="Github" target="_blank" href="https://www.github.com/yupiik/yupiik-logging"><i class="fab fa-github fa-fw"></i></a></li>
 	        </ul>
-            <small class="copyright">© 2024 <strong><a href="https://www.yupiik.com">Yupiik</a></strong>. All Rights Reserved</small> | <a href="https://www.yupiik.com/terms-of-use/">Terms of use</a> | <a href="https://www.yupiik.com/privacy-policy/">Privacy policy</a>
+            <small class="copyright">© 2026 <strong><a href="https://www.yupiik.com">Yupiik</a></strong>. All Rights Reserved</small> | <a href="https://www.yupiik.com/terms-of-use/">Terms of use</a> | <a href="https://www.yupiik.com/privacy-policy/">Privacy policy</a>
 	    </div>
     </footer>
 
@@ -676,7 +697,7 @@ function addCopyButtons(clipboard) {
   document.querySelectorAll('pre > code').forEach(function (codeBlock) {
   var button = document.createElement('button');  button.className = 'copy-code-button';  button.type = 'button';  button.innerText = 'Copy';  button.addEventListener('click', function () {   clipboard.writeText(codeBlock.innerText).then(function () {   button.blur();   button.innerText = 'Copied!';   setTimeout(function () { button.innerText = 'Copy'; }, 2000); }, function (error) { button.innerText = 'Error'; });  });  var pre = codeBlock.parentNode;  if (pre.parentNode.classList.contains('highlight')) {   var highlight = pre.parentNode; highlight.parentNode.insertBefore(button, highlight);  } else { pre.parentNode.insertBefore(button, pre); } });}
 if (navigator && navigator.clipboard) { addCopyButtons(navigator.clipboard);} else { var script = document.createElement('script'); script.src = '//cdnjs.cloudflare.com/ajax/libs/clipboard-polyfill/2.7.0/clipboard-polyfill.promise.js'; script.integrity = 'sha256-waClS2re9NUbXRsryKoof+F9qc1gjjIhc2eT7ZbIv94='; script.crossOrigin = 'anonymous'; script.onload = function() {addCopyButtons(clipboard);}; document.body.appendChild(script);} }</script>
-    <script src="//www.yupiik.io/yupiik-logging/js/minisite.js?v=1.0.9-SNAPSHOT"></script>
+    <script src="//www.yupiik.io/yupiik-logging/js/minisite.js?v=1.0.9"></script>
     <script>$('.page-content-body').generatedNavMenu();</script>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/fuse.js/6.4.3/fuse.min.js" integrity="sha512-neoBxVNv0UMXjoilAYGxfWrSsW6iAVclx7vQKdPJ9Peet1bM5YQjU0aIB8LtH8iNPa+pAyMZprBBw2ZQ/Q1LjQ==" crossorigin="anonymous"></script>
