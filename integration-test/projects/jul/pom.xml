@@ -74,7 +74,7 @@
             </goals>
             <configuration>
               <main>test.Main</main>
-              <graalVersion>22.3.0.r17</graalVersion>
+              <graalVersion>17.0.9-graalce</graalVersion>
               <customOptions>
                 <customOption>-Djava.util.logging.manager=io.yupiik.logging.jul.YupiikLogManager</customOption>
               </customOptions>

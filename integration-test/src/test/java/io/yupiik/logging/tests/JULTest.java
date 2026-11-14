@@ -29,7 +29,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Stream;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Locale.ROOT;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toList;
@@ -97,18 +96,9 @@ class JULTest {
         return System.getProperty("project.version", "1.0.8-SNAPSHOT");
     }
 
-    private String assertExitCode(final Process result) throws IOException {
-        assertEquals(0, result.exitValue(), () -> {
-            try {
-                return "" +
-                        "status=" + result.exitValue() + "\n" +
-                        "stdout=\n" + new String(result.getInputStream().readAllBytes(), UTF_8) + "\n" +
-                        "stderr=\n" + new String(result.getErrorStream().readAllBytes(), UTF_8);
-            } catch (final IOException e) {
-                return "status=" + result.exitValue();
-            }
-        });
-        return new String(result.getInputStream().readAllBytes(), UTF_8);
+    private String assertExitCode(final ProcessResult result) {
+        assertEquals(0, result.exitCode, () -> "status=" + result.exitCode + "\noutput=\n" + result.output);
+        return result.output;
     }
 
     private String findMaven() {
@@ -127,7 +117,7 @@ class JULTest {
                 .orElse("mvn");
     }
 
-    private Process buildAndRun(final Path work, final String project, final List<String> args, final String binOpt) throws IOException {
+    private ProcessResult buildAndRun(final Path work, final String project, final List<String> args, final String binOpt) throws IOException {
         final var target = Files.createDirectories(work.resolve("project"));
         final var from = Path.of(System.getProperty("maven.test.projects", "projects")).resolve(project);
         Files.walkFileTree(from, new SimpleFileVisitor<>() {
@@ -145,8 +135,10 @@ class JULTest {
             }
         });
 
-        final var mvnProcessBuilder = new ProcessBuilder(Stream.concat(Stream.of(maven), args.stream()).collect(toList()));
-        mvnProcessBuilder.inheritIO();
+        final var command = Stream.concat(Stream.of(maven), args.stream()).collect(toList());
+        ofNullable(System.getProperty("arthur.nativeImage"))
+                .ifPresent(it -> command.add("-Darthur.nativeImage=" + it));
+        final var mvnProcessBuilder = new ProcessBuilder(command);
 
         final var environment = mvnProcessBuilder.environment();
         environment.put("MAVEN_HOME", System.getProperty("maven.home", ""));
@@ -158,16 +150,31 @@ class JULTest {
         return exec(new ProcessBuilder("target/" + project + ".graal.bin", binOpt), target);
     }
 
-    private Process exec(final ProcessBuilder builder, final Path target) throws IOException {
+    private ProcessResult exec(final ProcessBuilder builder, final Path target) throws IOException {
         builder.directory(target.toFile());
+        final var output = Files.createTempFile(target, "process-", ".log");
+        builder.redirectErrorStream(true);
+        builder.redirectOutput(output.toFile());
 
         try {
             final var start = builder.start();
-            start.waitFor();
-            return start;
+            final var exitCode = start.waitFor();
+            return new ProcessResult(exitCode, Files.readString(output));
         } catch (final InterruptedException e) {
             Thread.currentThread().interrupt();
             return fail(e);
+        } finally {
+            Files.deleteIfExists(output);
+        }
+    }
+
+    private static class ProcessResult {
+        private final int exitCode;
+        private final String output;
+
+        private ProcessResult(final int exitCode, final String output) {
+            this.exitCode = exitCode;
+            this.output = output;
         }
     }
 }

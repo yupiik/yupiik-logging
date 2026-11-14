@@ -32,6 +32,11 @@ Build is just about running `mvn package` on the project.
 
 Minisite build/publish commands are in the root pom.xml (`mvn clean yupiik-tools:minisite@doc`).
 
+Run the unit tests alone with `mvn test -pl yupiik-logging-jul -am`.
+The full test suite also builds and runs a GraalVM native executable.
+To use an installed native-image executable instead of downloading GraalVM, run
+`mvn test -Darthur.nativeImage=/path/to/graalvm/bin/native-image`.
+
 A small trick can be needed to run the integration test depending on your local setup.
 If you have write permission issues with docker do the following:
 
