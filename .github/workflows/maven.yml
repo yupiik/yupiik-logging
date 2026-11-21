@@ -34,7 +34,7 @@ jobs:
           path: /home/runner/work/yupiik-logging/yupiik-logging/.m2
           key: m2_repository
       - name: Set up JDK
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@v6
         with:
           distribution: 'zulu'
           java-version: '21'
